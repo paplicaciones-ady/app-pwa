@@ -19,7 +19,7 @@ export class AuthService {
 
   private readonly token = signal<string | null>(null);
   readonly currentUser = signal<User | null>(null);
-  readonly isLoggedIn = computed(() => this.currentUser() !== null);
+  readonly isLoggedIn = computed(() => this.token() !== null);
   readonly tokenValue = this.token.asReadonly();
 
   async init() {
@@ -33,7 +33,7 @@ export class AuthService {
   private fetchUser() {
     this.http.get<User>('/api/auth/me').subscribe({
       next: (user) => this.currentUser.set(user),
-      error: () => this.logout(),
+      error: () => this.currentUser.set(null),
     });
   }
 
