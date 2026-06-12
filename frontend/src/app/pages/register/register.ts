@@ -61,7 +61,7 @@ export class Register {
 
   constructor() {
     if (this.authService.isLoggedIn()) {
-      this.router.navigate(['/profile']);
+      this.router.navigate(['/home']);
     }
   }
 
@@ -74,7 +74,7 @@ export class Register {
     this.authService.register(email, password).subscribe({
       next: () => {
         this.loading.set(false);
-        this.router.navigate(['/profile']);
+        this.router.navigate(['/home']);
       },
       error: (err) => {
         this.loading.set(false);

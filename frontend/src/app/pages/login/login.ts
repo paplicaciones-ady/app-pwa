@@ -56,7 +56,7 @@ export class Login {
 
   constructor() {
     if (this.authService.isLoggedIn()) {
-      this.router.navigate(['/profile']);
+      this.router.navigate(['/home']);
     }
   }
 
@@ -69,7 +69,7 @@ export class Login {
     this.authService.login(email, password).subscribe({
       next: () => {
         this.loading.set(false);
-        this.router.navigate(['/profile']);
+        this.router.navigate(['/home']);
       },
       error: (err) => {
         this.loading.set(false);
@@ -88,7 +88,7 @@ export class Login {
     try {
       const token = await this.passkeyService.loginPasskey(email);
       this.authService.setSession(token);
-      this.router.navigate(['/profile']);
+      this.router.navigate(['/home']);
     } catch (err: any) {
       this.error.set(err.message ?? 'Error con la huella');
     } finally {
