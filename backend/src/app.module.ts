@@ -5,6 +5,8 @@ import { AppController } from './app.controller';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { PasskeysModule } from './passkeys/passkeys.module';
+import { ProductsModule } from './products/products.module';
+import { PqrsModule } from './pqrs/pqrs.module';
 
 @Module({
   imports: [
@@ -34,6 +36,8 @@ import { PasskeysModule } from './passkeys/passkeys.module';
     UsersModule,
     AuthModule,
     PasskeysModule,
+    ProductsModule,
+    PqrsModule,
   ],
   controllers: [AppController],
 })

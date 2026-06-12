@@ -16,3 +16,20 @@ CREATE TABLE IF NOT EXISTS "passkey_credentials" (
     "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
     transports JSON
 );
+
+CREATE TABLE IF NOT EXISTS "products" (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    "createdAt" TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS "pqrs" (
+    id SERIAL PRIMARY KEY,
+    type VARCHAR(50) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    "productId" INTEGER NOT NULL REFERENCES "products"(id) ON DELETE CASCADE,
+    "userId" INTEGER NOT NULL REFERENCES "users"(id) ON DELETE CASCADE,
+    "createdAt" TIMESTAMP NOT NULL DEFAULT NOW()
+);
