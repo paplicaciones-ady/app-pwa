@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { AuthService } from './services/auth.service';
+import { ConnectivityService } from './services/connectivity.service';
 import { Navbar } from './components/navbar/navbar';
 
 @Component({
@@ -13,5 +14,6 @@ import { Navbar } from './components/navbar/navbar';
 export class App {
   constructor() {
     inject(AuthService).init();
+    inject(ConnectivityService).init();
   }
 }
