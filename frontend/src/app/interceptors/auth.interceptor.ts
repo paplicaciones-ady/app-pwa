@@ -6,7 +6,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
   const token = authService.tokenValue();
 
-  const skipPaths = ['/auth/login', '/auth/passkey/login'];
+  const skipPaths = ['/auth/login', '/auth/passkey/login', '/auth/microsoft'];
   const shouldSkip = skipPaths.some((p) => req.url.includes(p));
 
   if (token && !shouldSkip) {

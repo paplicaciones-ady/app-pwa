@@ -8,6 +8,9 @@ import { IndexedDbService } from './indexed-db.service';
 export interface User {
   id: number;
   email: string;
+  name: string | null;
+  microsoftId: string | null;
+  createdAt: string;
 }
 
 @Injectable({ providedIn: 'root' })

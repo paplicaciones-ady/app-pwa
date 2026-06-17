@@ -49,6 +49,10 @@ export class UsersService {
     return this.usersRepository.save(user);
   }
 
+  async save(user: User): Promise<User> {
+    return this.usersRepository.save(user);
+  }
+
   async create(email: string, passwordHash: string): Promise<User> {
     const user = this.usersRepository.create({ email, passwordHash });
     return this.usersRepository.save(user);

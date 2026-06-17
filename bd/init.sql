@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS "users" (
     "passwordHash" VARCHAR(255),
     "microsoftId" VARCHAR(255) UNIQUE,
     "name" VARCHAR(255),
+    "microsoftRefreshToken" TEXT,
     "createdAt" TIMESTAMP NOT NULL DEFAULT NOW()
 );
 

@@ -10,13 +10,35 @@ import { PasskeyService } from '../../services/passkey.service';
   template: `
     <div class="container">
       <h2>Mi perfil</h2>
-      <p>Email: <strong>{{ authService.currentUser()?.email }}</strong></p>
+
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="label">Email</span>
+          <span class="value">{{ authService.currentUser()?.email }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Nombre</span>
+          <span class="value">{{ authService.currentUser()?.name || '—' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Microsoft ID</span>
+          <span class="value">{{ authService.currentUser()?.microsoftId ?? '—' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Cuenta Microsoft</span>
+          <span class="value">{{ authService.currentUser()?.microsoftId ? 'Vinculada' : 'No vinculada' }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Registrado</span>
+          <span class="value">{{ (authService.currentUser()?.createdAt | date:'medium') || '—' }}</span>
+        </div>
+      </div>
 
       @if (error(); as e) {
         <div class="error">{{ e }}</div>
       }
 
-      <h3>Mis dispositivos</h3>
+      <h3>Dispositivos con huella</h3>
       @if (passkeys().length === 0) {
         <p class="empty">No tienes dispositivos registrados</p>
       }
@@ -37,6 +59,10 @@ import { PasskeyService } from '../../services/passkey.service';
     .container { max-width: 480px; margin: 3rem auto; padding: 2rem; font-family: sans-serif; }
     h2 { text-align: center; }
     h3 { margin-top: 2rem; }
+    .info-grid { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 2rem; }
+    .info-item { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #eee; }
+    .label { color: #666; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    .value { font-weight: 600; }
     .empty { color: #888; font-size: 0.9rem; }
     .passkey-item { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid #eee; }
     button { padding: 0.75rem; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer; }

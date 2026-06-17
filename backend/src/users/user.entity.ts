@@ -22,6 +22,9 @@ export class User {
   @Column({ nullable: true })
   name?: string;
 
+  @Column({ nullable: true })
+  microsoftRefreshToken?: string;
+
   @CreateDateColumn()
   createdAt!: Date;
 }

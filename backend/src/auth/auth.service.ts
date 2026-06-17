@@ -46,7 +46,13 @@ export class AuthService {
   async validateUser(userId: number) {
     const user = await this.usersService.findById(userId);
     if (!user) return null;
-    return { id: user.id, email: user.email };
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name ?? null,
+      microsoftId: user.microsoftId ?? null,
+      createdAt: user.createdAt,
+    };
   }
 
   private signToken(userId: number, email: string) {

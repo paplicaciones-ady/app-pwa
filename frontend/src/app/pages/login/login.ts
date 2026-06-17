@@ -1,6 +1,8 @@
 import { Component, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { PasskeyService } from '../../services/passkey.service';
 
@@ -15,6 +17,12 @@ import { PasskeyService } from '../../services/passkey.service';
       @if (error(); as e) {
         <div class="error">{{ e }}</div>
       }
+
+      <button class="microsoft-btn" (click)="onMicrosoftLogin()" [disabled]="loading()">
+        Continuar con Microsoft
+      </button>
+
+      <hr />
 
       <form [formGroup]="form" (ngSubmit)="onSubmit()">
         <input formControlName="email" type="email" placeholder="Email" autocomplete="email" />
@@ -32,11 +40,14 @@ import { PasskeyService } from '../../services/passkey.service';
   styles: `
     .container { max-width: 360px; margin: 4rem auto; padding: 2rem; font-family: sans-serif; }
     h2 { text-align: center; margin-bottom: 1.5rem; }
+    hr { margin: 1rem 0; border: none; border-top: 1px solid #ddd; }
     form { display: flex; flex-direction: column; gap: 0.75rem; }
     input { padding: 0.75rem; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; }
-    button { padding: 0.75rem; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer; background: #007bff; color: #fff; }
+    button { padding: 0.75rem; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer; }
     button:disabled { opacity: 0.5; cursor: default; }
-    .passkey-btn { margin-top: 0.5rem; background: #28a745; }
+    .microsoft-btn { width: 100%; background: #2f2f2f; color: #fff; font-weight: 600; }
+    .passkey-btn { margin-top: 0.5rem; background: #28a745; color: #fff; width: 100%; }
+    .blue-btn { background: #007bff; color: #fff; }
     .error { background: #f8d7da; color: #721c24; padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.9rem; }
     a { display: block; text-align: center; margin-top: 1rem; color: #007bff; text-decoration: none; }
   `,
@@ -44,6 +55,7 @@ import { PasskeyService } from '../../services/passkey.service';
 export class Login {
   private readonly authService = inject(AuthService);
   private readonly passkeyService = inject(PasskeyService);
+  private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
 
   protected readonly form = new FormGroup({
@@ -57,6 +69,21 @@ export class Login {
   constructor() {
     if (this.authService.isLoggedIn()) {
       this.router.navigate(['/home']);
+    }
+  }
+
+  protected async onMicrosoftLogin() {
+    this.error.set(null);
+    this.loading.set(true);
+
+    try {
+      const { url } = await firstValueFrom(
+        this.http.get<{ url: string }>('/api/auth/microsoft/login'),
+      );
+      window.location.href = url;
+    } catch {
+      this.error.set('Error al conectar con Microsoft');
+      this.loading.set(false);
     }
   }
 

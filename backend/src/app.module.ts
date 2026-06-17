@@ -8,6 +8,7 @@ import { PasskeysModule } from './passkeys/passkeys.module';
 import { ProductsModule } from './products/products.module';
 import { PqrsModule } from './pqrs/pqrs.module';
 import { DevicesModule } from './devices/devices.module';
+import { MicrosoftAuthModule } from './microsoft-auth/microsoft-auth.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { DevicesModule } from './devices/devices.module';
     ProductsModule,
     PqrsModule,
     DevicesModule,
+    MicrosoftAuthModule,
   ],
   controllers: [AppController],
 })
