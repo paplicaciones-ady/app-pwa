@@ -1,7 +1,19 @@
 CREATE TABLE IF NOT EXISTS "users" (
     id SERIAL PRIMARY KEY,
     email VARCHAR(255) NOT NULL UNIQUE,
-    "passwordHash" VARCHAR(255) NOT NULL,
+    "passwordHash" VARCHAR(255),
+    "microsoftId" VARCHAR(255) UNIQUE,
+    "name" VARCHAR(255),
+    "createdAt" TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS "devices" (
+    id SERIAL PRIMARY KEY,
+    "userId" INTEGER NOT NULL REFERENCES "users"(id) ON DELETE CASCADE,
+    "deviceName" VARCHAR(255) NOT NULL,
+    "deviceFingerprint" VARCHAR(255) NOT NULL,
+    "isTrusted" BOOLEAN NOT NULL DEFAULT FALSE,
+    "lastUsedAt" TIMESTAMP,
     "createdAt" TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
@@ -13,6 +25,7 @@ CREATE TABLE IF NOT EXISTS "passkey_credentials" (
     counter INTEGER NOT NULL DEFAULT 0,
     "backedUp" BOOLEAN NOT NULL DEFAULT FALSE,
     "deviceName" VARCHAR(255),
+    "deviceId" INTEGER REFERENCES "devices"(id) ON DELETE SET NULL,
     "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
     transports JSON
 );

@@ -51,11 +51,13 @@ export class PasskeysController {
   async registerComplete(
     @Req() req: any,
     @Body('credential') credential: any,
+    @Body('deviceId') deviceId?: number,
     @Headers('origin') origin?: string,
   ) {
     return this.passkeysService.verifyRegistrationResponse(
       req.user.id,
       credential,
+      deviceId,
       origin,
     );
   }

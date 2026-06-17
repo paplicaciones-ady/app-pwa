@@ -22,6 +22,33 @@ export class UsersService {
     return this.usersRepository.findOne({ where: { email } });
   }
 
+  async findByMicrosoftId(microsoftId: string): Promise<User | null> {
+    return this.usersRepository.findOne({ where: { microsoftId } });
+  }
+
+  async findOrCreateFromMicrosoft(
+    microsoftId: string,
+    email: string,
+    name?: string,
+  ): Promise<User> {
+    const existing = await this.findByMicrosoftId(microsoftId);
+    if (existing) return existing;
+
+    const byEmail = await this.findByEmail(email);
+    if (byEmail && !byEmail.microsoftId) {
+      byEmail.microsoftId = microsoftId;
+      byEmail.name = name ?? byEmail.name;
+      return this.usersRepository.save(byEmail);
+    }
+
+    const user = this.usersRepository.create({
+      email,
+      microsoftId,
+      name: name ?? email,
+    });
+    return this.usersRepository.save(user);
+  }
+
   async create(email: string, passwordHash: string): Promise<User> {
     const user = this.usersRepository.create({ email, passwordHash });
     return this.usersRepository.save(user);

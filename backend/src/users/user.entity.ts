@@ -13,8 +13,14 @@ export class User {
   @Column({ unique: true })
   email!: string;
 
-  @Column()
-  passwordHash!: string;
+  @Column({ nullable: true })
+  passwordHash?: string;
+
+  @Column({ nullable: true, unique: true })
+  microsoftId?: string;
+
+  @Column({ nullable: true })
+  name?: string;
 
   @CreateDateColumn()
   createdAt!: Date;

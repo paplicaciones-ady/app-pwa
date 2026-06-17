@@ -1,4 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
+import { Device } from '../devices/device.entity';
 
 @Entity('passkey_credentials')
 export class PasskeyCredential {
@@ -22,6 +30,13 @@ export class PasskeyCredential {
 
   @Column({ nullable: true })
   deviceName?: string;
+
+  @Column({ nullable: true })
+  deviceId?: number;
+
+  @ManyToOne(() => Device, { nullable: true })
+  @JoinColumn({ name: 'deviceId' })
+  device?: Device;
 
   @CreateDateColumn()
   createdAt!: Date;

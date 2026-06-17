@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { PasskeysModule } from './passkeys/passkeys.module';
 import { ProductsModule } from './products/products.module';
 import { PqrsModule } from './pqrs/pqrs.module';
+import { DevicesModule } from './devices/devices.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { PqrsModule } from './pqrs/pqrs.module';
     PasskeysModule,
     ProductsModule,
     PqrsModule,
+    DevicesModule,
   ],
   controllers: [AppController],
 })

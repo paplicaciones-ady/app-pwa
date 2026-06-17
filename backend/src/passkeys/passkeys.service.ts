@@ -60,6 +60,7 @@ export class PasskeysService {
   async verifyRegistrationResponse(
     userId: number,
     credential: any,
+    deviceId?: number,
     origin?: string,
   ) {
     const challenge = this.challenges.get(userId);
@@ -88,6 +89,7 @@ export class PasskeysService {
       counter: reg.counter,
       backedUp: verification.registrationInfo.credentialBackedUp,
       transports: credential.transports ?? [],
+      ...(deviceId !== undefined && { deviceId }),
     });
 
     await this.passkeyRepo.save(passkey);
