@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, NotFoundException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
@@ -110,10 +110,17 @@ export class PasskeysService {
     return { ok: true };
   }
 
-  async generateAuthenticationOptions(email: string, deviceFingerprint?: string, origin?: string) {
-    const user = await this.usersService.findByEmail(email);
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+  async generateAuthenticationOptions(email?: string, deviceFingerprint?: string, origin?: string) {
+    let user;
+    if (email) {
+      user = await this.usersService.findByEmail(email);
+      if (!user) throw new UnauthorizedException('Invalid credentials');
+    } else if (deviceFingerprint) {
+      const device = await this.devicesService.findByFingerprintPublic(deviceFingerprint);
+      if (!device?.user) throw new UnauthorizedException('Device not registered');
+      user = device.user;
+    } else {
+      throw new BadRequestException('Email or deviceFingerprint required');
     }
 
     let deviceId: number | null = null;

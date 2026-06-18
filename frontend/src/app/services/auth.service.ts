@@ -2,8 +2,9 @@ import { Injectable, inject, signal, computed, PLATFORM_ID } from '@angular/core
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable, tap, lastValueFrom } from 'rxjs';
 import { IndexedDbService } from './indexed-db.service';
+import { MicrosoftAuthService } from './microsoft-auth.service';
 
 export interface User {
   id: number;
@@ -19,25 +20,54 @@ export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly indexedDb = inject(IndexedDbService);
   private readonly router = inject(Router);
+  private readonly microsoftAuthService = inject(MicrosoftAuthService);
 
   private readonly token = signal<string | null>(null);
   readonly currentUser = signal<User | null>(null);
   readonly isLoggedIn = computed(() => this.token() !== null);
   readonly tokenValue = this.token.asReadonly();
 
+  readonly microsoftSession = signal<User | null>(null);
+  readonly localSession = signal(false);
+  readonly authLevel = computed<'none' | 'local' | 'full'>(() => {
+    if (!this.isLoggedIn()) return 'none';
+    return this.microsoftSession() ? 'full' : 'local';
+  });
+  readonly isFullyAuthenticated = computed(() => this.authLevel() === 'full');
+  readonly deviceFingerprint = signal<string | null>(null);
+
   async init() {
     if (!isPlatformBrowser(this.platformId)) return;
     const stored = await this.indexedDb.getToken();
     if (!stored) return;
     this.token.set(stored);
-    this.fetchUser();
+
+    const method = await this.indexedDb.getAuthMethod();
+    if (method === 'local') this.localSession.set(true);
+
+    const user = await this.fetchUser();
+
+    if (method === 'microsoft') {
+      this.microsoftSession.set(user);
+    } else if (method === 'local') {
+      try {
+        await lastValueFrom(this.microsoftAuthService.refreshToken());
+        this.microsoftSession.set(this.currentUser());
+      } catch {
+        // Microsoft refresh failed, stay at local level
+      }
+    }
   }
 
-  private fetchUser() {
-    this.http.get<User>('/api/auth/me').subscribe({
-      next: (user) => this.currentUser.set(user),
-      error: () => this.currentUser.set(null),
-    });
+  private async fetchUser(): Promise<User | null> {
+    try {
+      const user = await lastValueFrom(this.http.get<User>('/api/auth/me'));
+      this.currentUser.set(user);
+      return user;
+    } catch {
+      this.currentUser.set(null);
+      return null;
+    }
   }
 
   register(email: string, password: string): Observable<{ access_token: string }> {
@@ -67,13 +97,41 @@ export class AuthService {
   async logout() {
     this.token.set(null);
     this.currentUser.set(null);
+    this.microsoftSession.set(null);
+    this.localSession.set(false);
+    this.deviceFingerprint.set(null);
     await this.indexedDb.removeToken();
+    await this.indexedDb.removeAuthMethod();
+    await this.indexedDb.removeDeviceCheck();
     this.router.navigate(['/login']);
   }
 
-  setSession(accessToken: string) {
+  async setSession(accessToken: string, authMethod: 'local' | 'microsoft') {
     this.token.set(accessToken);
-    this.indexedDb.setToken(accessToken);
-    this.fetchUser();
+    await this.indexedDb.setToken(accessToken);
+    await this.indexedDb.setAuthMethod(authMethod);
+    this.localSession.set(authMethod === 'local');
+    const user = await this.fetchUser();
+    if (authMethod === 'microsoft') {
+      this.microsoftSession.set(user);
+    } else {
+      try {
+        await lastValueFrom(this.microsoftAuthService.refreshToken());
+        this.microsoftSession.set(this.currentUser());
+      } catch {
+        // Microsoft refresh not available, stay at local level
+      }
+    }
+  }
+
+  async tryUpgradeSession(): Promise<boolean> {
+    if (!this.localSession() || this.isFullyAuthenticated()) return false;
+    try {
+      await lastValueFrom(this.microsoftAuthService.refreshToken());
+      this.microsoftSession.set(this.currentUser());
+      return true;
+    } catch {
+      return false;
+    }
   }
 }

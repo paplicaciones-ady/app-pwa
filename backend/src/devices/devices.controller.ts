@@ -20,10 +20,13 @@ export class DevicesController {
   async checkFingerprint(@Body('fingerprint') fingerprint: string) {
     const device = await this.devicesService.findByFingerprintPublic(fingerprint);
     if (!device) return { registered: false };
+    const userId = device.user?.id;
+    const hasPasskeys = userId ? (await this.devicesService.getPasskeyCount(userId)) > 0 : false;
     return {
       registered: true,
       deviceName: device.deviceName,
       isTrusted: device.isTrusted,
+      hasPasskeys,
       userName: device.user?.name ?? null,
       userEmail: device.user?.email ?? null,
     };

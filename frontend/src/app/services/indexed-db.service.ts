@@ -44,4 +44,64 @@ export class IndexedDbService {
       tx.onerror = () => reject(tx.error);
     });
   }
+
+  async getAuthMethod(): Promise<'local' | 'microsoft' | null> {
+    const db = await this.getDb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(this.storeName, 'readonly');
+      const req = tx.objectStore(this.storeName).get('authMethod');
+      req.onsuccess = () => resolve(req.result ?? null);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async setAuthMethod(method: 'local' | 'microsoft'): Promise<void> {
+    const db = await this.getDb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(this.storeName, 'readwrite');
+      tx.objectStore(this.storeName).put(method, 'authMethod');
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  async removeAuthMethod(): Promise<void> {
+    const db = await this.getDb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(this.storeName, 'readwrite');
+      tx.objectStore(this.storeName).delete('authMethod');
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  async getDeviceCheck<T>(): Promise<T | null> {
+    const db = await this.getDb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(this.storeName, 'readonly');
+      const req = tx.objectStore(this.storeName).get('deviceCheck');
+      req.onsuccess = () => resolve(req.result ?? null);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async setDeviceCheck<T>(data: T): Promise<void> {
+    const db = await this.getDb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(this.storeName, 'readwrite');
+      tx.objectStore(this.storeName).put({ ...data, cachedAt: Date.now() }, 'deviceCheck');
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  async removeDeviceCheck(): Promise<void> {
+    const db = await this.getDb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(this.storeName, 'readwrite');
+      tx.objectStore(this.storeName).delete('deviceCheck');
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
 }

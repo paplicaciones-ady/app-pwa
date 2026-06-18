@@ -2,12 +2,15 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Device } from './device.entity';
+import { PasskeyCredential } from '../passkeys/passkey.entity';
 
 @Injectable()
 export class DevicesService {
   constructor(
     @InjectRepository(Device)
     private readonly deviceRepo: Repository<Device>,
+    @InjectRepository(PasskeyCredential)
+    private readonly passkeyRepo: Repository<PasskeyCredential>,
   ) {}
 
   async create(
@@ -46,6 +49,10 @@ export class DevicesService {
       where: { deviceFingerprint: fingerprint },
       relations: { user: true },
     });
+  }
+
+  async getPasskeyCount(userId: number): Promise<number> {
+    return this.passkeyRepo.count({ where: { userId } });
   }
 
   async findById(id: number): Promise<Device | null> {

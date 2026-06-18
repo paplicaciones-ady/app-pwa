@@ -43,6 +43,23 @@ export class PasskeyService {
     return res.access_token;
   }
 
+  async loginPasskeyByFingerprint(fingerprint: string): Promise<string> {
+    const opts = await lastValueFrom(
+      this.http.post<{ sessionId: string; publicKey: any }>(
+        '/api/auth/passkey/login/begin',
+        { deviceFingerprint: fingerprint },
+      ),
+    );
+    const credential = await startAuthentication(opts.publicKey);
+    const res = await lastValueFrom(
+      this.http.post<{ access_token: string }>(
+        '/api/auth/passkey/login/complete',
+        { sessionId: opts.sessionId, credential },
+      ),
+    );
+    return res.access_token;
+  }
+
   getPasskeys(): Observable<
     { id: number; deviceName?: string; deviceId?: number | null; createdAt: string }[]
   > {

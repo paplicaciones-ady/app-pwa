@@ -48,6 +48,13 @@ interface PasskeyItem {
         <div class="error">{{ e }}</div>
       }
 
+      @if (showBiometricNotice()) {
+        <div class="bio-notice">
+          <strong>🔐 Registra tu autenticación biométrica</strong>
+          <p>Registra una huella o reconocimiento facial en este dispositivo para acceder sin conexión y agilizar futuros inicios de sesión.</p>
+        </div>
+      }
+
       <h3>Dispositivos</h3>
 
       @if (devices().length === 0 && unattachedPasskeys().length === 0) {
@@ -152,6 +159,8 @@ interface PasskeyItem {
     .toggle-btn { background: #ffc107; color: #000; }
     .logout-btn { display: block; width: 100%; margin-top: 0.75rem; background: #6c757d; color: #fff; }
     .error { background: #f8d7da; color: #721c24; padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.9rem; }
+    .bio-notice { background: #d1ecf1; color: #0c5460; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; font-size: 0.9rem; line-height: 1.4; }
+    .bio-notice strong { display: block; margin-bottom: 0.3rem; }
     .name-input-dialog { border: 1px solid #007bff; border-radius: 8px; padding: 1rem; margin: 1rem 0; background: #f0f7ff; }
     .name-prompt { margin: 0 0 0.5rem; font-size: 0.9rem; color: #333; }
     .name-input-row { display: flex; align-items: center; gap: 0.25rem; margin-bottom: 0.75rem; flex-wrap: wrap; }
@@ -178,6 +187,12 @@ export class Profile implements OnInit {
 
   protected readonly unattachedPasskeys = computed(() =>
     this.passkeys().filter((pk) => pk.deviceId == null),
+  );
+
+  protected readonly showBiometricNotice = computed(() =>
+    this.authService.isFullyAuthenticated()
+    && this.devices().length === 0
+    && this.unattachedPasskeys().length === 0,
   );
 
   ngOnInit() {
