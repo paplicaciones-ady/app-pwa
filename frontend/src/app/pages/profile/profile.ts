@@ -97,6 +97,27 @@ interface PasskeyItem {
         </div>
       }
 
+      @if (showNameInput()) {
+        <div class="name-input-dialog">
+          <p class="name-prompt">Ponle un nombre a este dispositivo:</p>
+          <div class="name-input-row">
+            <span class="platform-prefix">{{ platformPrefix() }} + </span>
+            <input
+              #nameInput
+              type="text"
+              placeholder="nombre personalizado"
+              autofocus
+              (input)="customName.set(nameInput.value)"
+              (keydown.enter)="onConfirmName()"
+            />
+          </div>
+          <div class="name-actions">
+            <button class="primary-btn" (click)="onConfirmName()" [disabled]="!customName().trim()">Confirmar</button>
+            <button class="small-btn cancel-btn" (click)="onCancelName()" [disabled]="loading()">Cancelar</button>
+          </div>
+        </div>
+      }
+
       <button class="primary-btn" (click)="onRegisterPasskey()" [disabled]="loading()">
         {{ loading() ? 'Registrando...' : 'Registrar huella' }}
       </button>
@@ -131,6 +152,13 @@ interface PasskeyItem {
     .toggle-btn { background: #ffc107; color: #000; }
     .logout-btn { display: block; width: 100%; margin-top: 0.75rem; background: #6c757d; color: #fff; }
     .error { background: #f8d7da; color: #721c24; padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.9rem; }
+    .name-input-dialog { border: 1px solid #007bff; border-radius: 8px; padding: 1rem; margin: 1rem 0; background: #f0f7ff; }
+    .name-prompt { margin: 0 0 0.5rem; font-size: 0.9rem; color: #333; }
+    .name-input-row { display: flex; align-items: center; gap: 0.25rem; margin-bottom: 0.75rem; flex-wrap: wrap; }
+    .platform-prefix { font-weight: 600; font-size: 0.9rem; white-space: nowrap; color: #555; }
+    .name-input-row input { flex: 1; min-width: 140px; padding: 0.5rem; border: 1px solid #ccc; border-radius: 6px; font-size: 0.9rem; }
+    .name-actions { display: flex; gap: 0.5rem; }
+    .cancel-btn { background: #6c757d; color: #fff; }
   `,
 })
 export class Profile implements OnInit {
@@ -143,6 +171,10 @@ export class Profile implements OnInit {
   protected readonly devices = signal<Device[]>([]);
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
+  protected readonly showNameInput = signal(false);
+  protected readonly customName = signal('');
+  protected readonly platformPrefix = signal('');
+  private pendingFingerprint = '';
 
   protected readonly unattachedPasskeys = computed(() =>
     this.passkeys().filter((pk) => pk.deviceId == null),
@@ -171,27 +203,52 @@ export class Profile implements OnInit {
   }
 
   protected async onRegisterPasskey() {
-    this.loading.set(true);
     this.error.set(null);
     try {
       const fingerprint = await this.fingerprintService.getFingerprint();
       const existing = this.devices().find((d) => d.deviceFingerprint === fingerprint);
-      let deviceId = existing?.id;
 
-      if (!deviceId) {
-        const name = navigator.platform || 'Dispositivo';
-        const newDevice = await firstValueFrom(this.deviceService.registerDevice(name, fingerprint));
-        deviceId = newDevice.id;
-        this.loadDevices();
+      if (existing?.id) {
+        this.loading.set(true);
+        await this.passkeyService.registerPasskey(existing.id);
+        this.loadPasskeys();
+        this.loading.set(false);
+        return;
       }
 
-      await this.passkeyService.registerPasskey(deviceId);
-      this.loadPasskeys();
+      this.pendingFingerprint = fingerprint;
+      this.platformPrefix.set(navigator.platform || 'Unknown');
+      this.customName.set('');
+      this.showNameInput.set(true);
     } catch (err: any) {
       this.error.set(err.message ?? 'Error al registrar huella');
+    }
+  }
+
+  protected async onConfirmName() {
+    if (!this.customName().trim() || !this.pendingFingerprint) return;
+    this.loading.set(true);
+    this.error.set(null);
+    try {
+      const fullName = `${this.platformPrefix()} + ${this.customName().trim()}`;
+      const newDevice = await firstValueFrom(
+        this.deviceService.registerDevice(fullName, this.pendingFingerprint),
+      );
+      this.showNameInput.set(false);
+      this.loadDevices();
+      await this.passkeyService.registerPasskey(newDevice.id);
+      this.loadPasskeys();
+    } catch (err: any) {
+      this.error.set(err.message ?? 'Error al registrar dispositivo');
     } finally {
       this.loading.set(false);
     }
+  }
+
+  protected onCancelName() {
+    this.showNameInput.set(false);
+    this.pendingFingerprint = '';
+    this.customName.set('');
   }
 
   protected onToggleTrust(id: number) {

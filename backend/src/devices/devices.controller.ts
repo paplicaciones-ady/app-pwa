@@ -23,6 +23,7 @@ export class DevicesController {
     return {
       registered: true,
       deviceName: device.deviceName,
+      isTrusted: device.isTrusted,
       userName: device.user?.name ?? null,
       userEmail: device.user?.email ?? null,
     };

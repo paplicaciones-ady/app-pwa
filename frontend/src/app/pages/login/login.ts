@@ -16,9 +16,9 @@ import { FingerprintService } from '../../services/fingerprint.service';
       <h2>Iniciar sesión</h2>
 
       @if (deviceStatus(); as d) {
-        <div class="device-status" [class.registered]="d.registered">
+        <div class="device-status" [class.registered]="d.registered" [class.trusted]="d.isTrusted">
           @if (d.registered) {
-            ✓ Dispositivo: {{ d.deviceName }} — {{ d.userName ?? d.userEmail }}
+            {{ d.isTrusted ? '✓ Confiado' : '✗ No confiado' }} · {{ d.deviceName }} · {{ d.userName ?? d.userEmail }}
           } @else {
             ✗ Dispositivo no registrado
           }
@@ -61,7 +61,8 @@ import { FingerprintService } from '../../services/fingerprint.service';
     .blue-btn { background: #007bff; color: #fff; }
     .error { background: #f8d7da; color: #721c24; padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.9rem; }
     .device-status { padding: 0.5rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.85rem; text-align: center; background: #f8d7da; color: #721c24; }
-    .device-status.registered { background: #d4edda; color: #155724; }
+    .device-status.registered { background: #fff3cd; color: #856404; }
+    .device-status.trusted { background: #d4edda; color: #155724; }
     a { display: block; text-align: center; margin-top: 1rem; color: #007bff; text-decoration: none; }
   `,
 })
@@ -79,7 +80,7 @@ export class Login {
 
   protected readonly error = signal<string | null>(null);
   protected readonly loading = signal(false);
-  protected readonly deviceStatus = signal<{ registered: boolean; deviceName?: string; userName?: string | null; userEmail?: string | null } | null>(null);
+  protected readonly deviceStatus = signal<{ registered: boolean; deviceName?: string; isTrusted?: boolean; userName?: string | null; userEmail?: string | null } | null>(null);
 
   constructor() {
     if (this.authService.isLoggedIn()) {
@@ -93,7 +94,7 @@ export class Login {
     try {
       const fingerprint = await this.fingerprintService.getFingerprint();
       const resp = await firstValueFrom(
-        this.http.post<{ registered: boolean; deviceName?: string; userName?: string | null; userEmail?: string | null }>('/api/devices/check', { fingerprint }),
+        this.http.post<{ registered: boolean; deviceName?: string; isTrusted?: boolean; userName?: string | null; userEmail?: string | null }>('/api/devices/check', { fingerprint }),
       );
       this.deviceStatus.set(resp);
     } catch {
