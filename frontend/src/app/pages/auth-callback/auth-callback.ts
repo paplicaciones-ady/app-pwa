@@ -23,9 +23,14 @@ export class AuthCallback implements OnInit {
   protected message = 'Procesando inicio de sesión…';
 
   ngOnInit() {
+    const url = this.router.url;
     const params = this.route.snapshot.queryParams;
+    console.log('[AuthCallback] URL actual:', url);
+    console.log('[AuthCallback] Query params recibidos:', { ...params });
+    console.log('[AuthCallback] Location href:', window.location.href);
 
     if (params['error']) {
+      console.log('[AuthCallback] Error recibido:', params['error']);
       this.message = 'Error al iniciar sesión con Microsoft. Redirigiendo…';
       setTimeout(() => this.router.navigate(['/login']), 2000);
       return;
@@ -33,14 +38,19 @@ export class AuthCallback implements OnInit {
 
     const token = params['token'];
     const isNewUser = params['isNewUser'] === 'true';
+    console.log('[AuthCallback] Token presente:', !!token, '| isNewUser:', isNewUser);
 
     if (!token) {
+      console.warn('[AuthCallback] No se recibió token en la URL');
       this.message = 'No se recibió el token. Redirigiendo…';
       setTimeout(() => this.router.navigate(['/login']), 2000);
       return;
     }
 
+    console.log('[AuthCallback] Llamando setSession con token (primeros 50 chars):', token.slice(0, 50));
     this.authService.setSession(token);
-    this.router.navigate([isNewUser ? '/profile' : '/home']);
+    const destino = isNewUser ? '/profile' : '/home';
+    console.log('[AuthCallback] Redirigiendo a:', destino);
+    this.router.navigate([destino]);
   }
 }

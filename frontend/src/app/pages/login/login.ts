@@ -73,15 +73,18 @@ export class Login {
   }
 
   protected async onMicrosoftLogin() {
+    console.log('[Microsoft Login] Iniciando flujo de login con Microsoft');
     this.error.set(null);
     this.loading.set(true);
 
     try {
-      const { url } = await firstValueFrom(
+      const resp = await firstValueFrom(
         this.http.get<{ url: string }>('/api/auth/microsoft/login'),
       );
-      window.location.href = url;
-    } catch {
+      console.log('[Microsoft Login] URL recibida del backend:', resp.url);
+      window.location.href = resp.url;
+    } catch (err) {
+      console.error('[Microsoft Login] Error al obtener URL de Microsoft:', err);
       this.error.set('Error al conectar con Microsoft');
       this.loading.set(false);
     }

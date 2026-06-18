@@ -40,7 +40,6 @@ export class MicrosoftAuthService {
   private readonly clientSecret: string;
   private readonly tenant: string;
   private readonly configRedirectUri: string;
-  private readonly frontendUrl: string;
   private readonly encryptionKey: string;
 
   constructor(
@@ -54,8 +53,6 @@ export class MicrosoftAuthService {
     this.configRedirectUri =
       config.get<string>('AZURE_REDIRECT_URI') ??
       'http://localhost:3000/api/auth/microsoft/callback';
-    this.frontendUrl =
-      config.get<string>('FRONTEND_URL') ?? 'http://localhost:4200';
     this.encryptionKey = config.getOrThrow<string>('AZURE_TOKEN_ENCRYPTION_KEY');
   }
 
@@ -68,15 +65,25 @@ export class MicrosoftAuthService {
   }
 
   async generateLoginUrl(redirectTo?: string, origin?: string): Promise<{ url: string }> {
+    console.log('[Microsoft Service] generateLoginUrl()');
+    console.log('[Microsoft Service]   origin:', origin);
+    console.log('[Microsoft Service]   redirectTo param:', redirectTo);
+
     this.cleanExpiredStates();
 
     const state = crypto.randomUUID();
     const redirectUri = this.resolveRedirectUri(origin);
+    const resolvedFrontendUrl = origin ?? 'http://localhost:4200';
+    console.log('[Microsoft Service]   redirectUri resuelto:', redirectUri);
+    console.log('[Microsoft Service]   resolvedFrontendUrl:', resolvedFrontendUrl);
+    console.log('[Microsoft Service]   state:', state);
+
     this.oauthStates.set(state, {
-      redirectTo: redirectTo ?? this.frontendUrl,
+      redirectTo: redirectTo ?? resolvedFrontendUrl,
       redirectUri,
       createdAt: new Date(),
     });
+    console.log('[Microsoft Service]   OAuth state guardado, total states:', this.oauthStates.size);
 
     const params = new URLSearchParams({
       client_id: this.clientId,
@@ -87,55 +94,86 @@ export class MicrosoftAuthService {
       response_mode: 'query',
     });
 
-    return {
-      url: `https://login.microsoftonline.com/${this.tenant}/oauth2/v2.0/authorize?${params}`,
-    };
+    const url = `https://login.microsoftonline.com/${this.tenant}/oauth2/v2.0/authorize?${params}`;
+    console.log('[Microsoft Service]   URL generada (primeros 120 chars):', url.slice(0, 120));
+    return { url };
   }
 
   async handleCallback(
     code: string,
     state: string,
   ): Promise<{ redirectUrl: string }> {
+    console.log('[Microsoft Service] handleCallback()');
+    console.log('[Microsoft Service]   code presente:', !!code);
+    console.log('[Microsoft Service]   state:', state);
+
     const stored = this.oauthStates.get(state);
     if (!stored) {
+      console.error('[Microsoft Service]   ERROR: State no encontrado en el Map. States disponibles:',
+        Array.from(this.oauthStates.keys()));
       throw new BadRequestException('Invalid or expired state');
     }
-    this.oauthStates.delete(state);
+    console.log('[Microsoft Service]   State encontrado:', { ...stored });
 
     if (Date.now() - stored.createdAt.getTime() > this.STATE_TTL) {
+      console.error('[Microsoft Service]   ERROR: State expirado');
       throw new BadRequestException('State expired');
     }
+    console.log('[Microsoft Service]   State válido');
 
+    console.log('[Microsoft Service]   Intercambiando código por tokens...');
     const tokens = await this.exchangeCodeForTokens(code, stored.redirectUri);
-    const microsoftUser = await this.validateIdToken(tokens.id_token);
+    console.log('[Microsoft Service]   Tokens obtenidos. id_token presente:', !!tokens.id_token);
+    console.log('[Microsoft Service]   refresh_token presente:', !!tokens.refresh_token);
 
+    console.log('[Microsoft Service]   Validando id_token...');
+    const microsoftUser = await this.validateIdToken(tokens.id_token);
+    console.log('[Microsoft Service]   Usuario Microsoft:', { ...microsoftUser });
+
+    console.log('[Microsoft Service]   Buscando/creando usuario en BD...');
     const user = await this.usersService.findOrCreateFromMicrosoft(
       microsoftUser.oid,
       microsoftUser.email,
       microsoftUser.name,
     );
+    console.log('[Microsoft Service]   Usuario local:', { id: user.id, email: user.email, name: user.name });
 
     if (tokens.refresh_token) {
+      console.log('[Microsoft Service]   Encriptando y guardando refresh_token...');
       user.microsoftRefreshToken = this.encryptToken(tokens.refresh_token);
       await this.usersService.save(user);
+      console.log('[Microsoft Service]   Refresh token guardado');
     }
 
     const appToken = this.jwtService.sign({
       sub: user.id,
       email: user.email,
     });
+    console.log('[Microsoft Service]   App JWT generado (primeros 50 chars):', appToken.slice(0, 50));
 
     const isNewUser =
       Math.abs(user.createdAt.getTime() - Date.now()) < 5000;
+    console.log('[Microsoft Service]   isNewUser:', isNewUser);
+
+    this.oauthStates.delete(state);
+    console.log('[Microsoft Service]   State eliminado del Map');
 
     const params = new URLSearchParams({
       token: appToken,
       isNewUser: String(isNewUser),
     });
 
-    return {
-      redirectUrl: `${stored.redirectTo}/auth/callback?${params}`,
-    };
+    const redirectUrl = `${stored.redirectTo}/auth/callback?${params}`;
+    console.log('[Microsoft Service]   redirectUrl FINAL:', redirectUrl);
+    return { redirectUrl };
+  }
+
+  peekStateRedirectTo(state: string): string | null {
+    console.log('[Microsoft Service] peekStateRedirectTo() state:', state);
+    const stored = this.oauthStates.get(state);
+    const result = stored?.redirectTo ?? null;
+    console.log('[Microsoft Service]   resultado:', result);
+    return result;
   }
 
   async refreshTokens(userId: number): Promise<boolean> {
@@ -180,6 +218,10 @@ export class MicrosoftAuthService {
     code: string,
     redirectUri: string,
   ): Promise<MicrosoftTokenResponse> {
+    console.log('[Microsoft Service]   exchangeCodeForTokens()');
+    console.log('[Microsoft Service]     code presente:', !!code);
+    console.log('[Microsoft Service]     redirectUri:', redirectUri);
+
     const body = new URLSearchParams({
       client_id: this.clientId,
       client_secret: this.clientSecret,
@@ -188,23 +230,28 @@ export class MicrosoftAuthService {
       grant_type: 'authorization_code',
     });
 
-    const res = await fetch(
-      `https://login.microsoftonline.com/${this.tenant}/oauth2/v2.0/token`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body,
-      },
-    );
+    const tokenUrl = `https://login.microsoftonline.com/${this.tenant}/oauth2/v2.0/token`;
+    console.log('[Microsoft Service]     POST a:', tokenUrl);
+
+    const res = await fetch(tokenUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body,
+    });
+
+    console.log('[Microsoft Service]     Status de respuesta:', res.status);
 
     if (!res.ok) {
       const text = await res.text();
+      console.error('[Microsoft Service]     ERROR en token exchange:', text);
       throw new InternalServerErrorException(
         `Microsoft token exchange failed: ${text}`,
       );
     }
 
-    return res.json() as Promise<MicrosoftTokenResponse>;
+    const data = await res.json() as MicrosoftTokenResponse;
+    console.log('[Microsoft Service]     Token exchange exitoso');
+    return data;
   }
 
   private async validateIdToken(idToken: string): Promise<MicrosoftUser> {
