@@ -5,6 +5,7 @@ import { ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angula
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { PasskeyService } from '../../services/passkey.service';
+import { FingerprintService } from '../../services/fingerprint.service';
 
 @Component({
   selector: 'app-login',
@@ -13,6 +14,16 @@ import { PasskeyService } from '../../services/passkey.service';
   template: `
     <div class="container">
       <h2>Iniciar sesión</h2>
+
+      @if (deviceStatus(); as d) {
+        <div class="device-status" [class.registered]="d.registered">
+          @if (d.registered) {
+            ✓ Dispositivo: {{ d.deviceName }} — {{ d.userName ?? d.userEmail }}
+          } @else {
+            ✗ Dispositivo no registrado
+          }
+        </div>
+      }
 
       @if (error(); as e) {
         <div class="error">{{ e }}</div>
@@ -49,12 +60,15 @@ import { PasskeyService } from '../../services/passkey.service';
     .passkey-btn { margin-top: 0.5rem; background: #28a745; color: #fff; width: 100%; }
     .blue-btn { background: #007bff; color: #fff; }
     .error { background: #f8d7da; color: #721c24; padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.9rem; }
+    .device-status { padding: 0.5rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.85rem; text-align: center; background: #f8d7da; color: #721c24; }
+    .device-status.registered { background: #d4edda; color: #155724; }
     a { display: block; text-align: center; margin-top: 1rem; color: #007bff; text-decoration: none; }
   `,
 })
 export class Login {
   private readonly authService = inject(AuthService);
   private readonly passkeyService = inject(PasskeyService);
+  private readonly fingerprintService = inject(FingerprintService);
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
 
@@ -65,10 +79,25 @@ export class Login {
 
   protected readonly error = signal<string | null>(null);
   protected readonly loading = signal(false);
+  protected readonly deviceStatus = signal<{ registered: boolean; deviceName?: string; userName?: string | null; userEmail?: string | null } | null>(null);
 
   constructor() {
     if (this.authService.isLoggedIn()) {
       this.router.navigate(['/home']);
+      return;
+    }
+    this.checkDevice();
+  }
+
+  private async checkDevice() {
+    try {
+      const fingerprint = await this.fingerprintService.getFingerprint();
+      const resp = await firstValueFrom(
+        this.http.post<{ registered: boolean; deviceName?: string; userName?: string | null; userEmail?: string | null }>('/api/devices/check', { fingerprint }),
+      );
+      this.deviceStatus.set(resp);
+    } catch {
+      // ignore — no internet or backend down
     }
   }
 

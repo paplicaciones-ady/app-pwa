@@ -41,6 +41,13 @@ export class DevicesService {
     });
   }
 
+  async findByFingerprintPublic(fingerprint: string): Promise<Device | null> {
+    return this.deviceRepo.findOne({
+      where: { deviceFingerprint: fingerprint },
+      relations: { user: true },
+    });
+  }
+
   async findById(id: number): Promise<Device | null> {
     return this.deviceRepo.findOne({ where: { id } });
   }

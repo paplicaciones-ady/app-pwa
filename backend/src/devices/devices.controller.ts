@@ -16,6 +16,18 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 export class DevicesController {
   constructor(private readonly devicesService: DevicesService) {}
 
+  @Post('check')
+  async checkFingerprint(@Body('fingerprint') fingerprint: string) {
+    const device = await this.devicesService.findByFingerprintPublic(fingerprint);
+    if (!device) return { registered: false };
+    return {
+      registered: true,
+      deviceName: device.deviceName,
+      userName: device.user?.name ?? null,
+      userEmail: device.user?.email ?? null,
+    };
+  }
+
   @Post()
   @UseGuards(JwtAuthGuard)
   async register(
