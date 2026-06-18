@@ -1,4 +1,5 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 
@@ -19,6 +20,7 @@ export class AuthCallback implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
+  private readonly platformId = inject(PLATFORM_ID);
 
   protected message = 'Procesando inicio de sesión…';
 
@@ -27,7 +29,9 @@ export class AuthCallback implements OnInit {
     const params = this.route.snapshot.queryParams;
     console.log('[AuthCallback] URL actual:', url);
     console.log('[AuthCallback] Query params recibidos:', { ...params });
-    console.log('[AuthCallback] Location href:', window.location.href);
+    if (isPlatformBrowser(this.platformId)) {
+      console.log('[AuthCallback] Location href:', window.location.href);
+    }
 
     if (params['error']) {
       console.log('[AuthCallback] Error recibido:', params['error']);

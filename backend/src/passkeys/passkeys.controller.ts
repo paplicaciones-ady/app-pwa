@@ -19,9 +19,10 @@ export class PasskeysController {
   @Post('login/begin')
   async loginBegin(
     @Body('email') email: string,
+    @Body('deviceFingerprint') deviceFingerprint?: string,
     @Headers('origin') origin?: string,
   ) {
-    return this.passkeysService.generateAuthenticationOptions(email, origin);
+    return this.passkeysService.generateAuthenticationOptions(email, deviceFingerprint, origin);
   }
 
   @Post('login/complete')

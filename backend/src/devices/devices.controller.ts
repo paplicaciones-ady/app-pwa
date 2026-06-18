@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Delete,
   Body,
   Param,
@@ -33,6 +34,12 @@ export class DevicesController {
   @UseGuards(JwtAuthGuard)
   async list(@Req() req: any) {
     return this.devicesService.findByUser(req.user.id);
+  }
+
+  @Patch(':id/toggle-trust')
+  @UseGuards(JwtAuthGuard)
+  async toggleTrust(@Req() req: any, @Param('id') id: string) {
+    return this.devicesService.toggleTrust(+id, req.user.id);
   }
 
   @Delete(':id')

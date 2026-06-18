@@ -10,6 +10,7 @@ import {
 } from '@simplewebauthn/server';
 import { PasskeyCredential } from './passkey.entity';
 import { UsersService } from '../users/users.service';
+import { DevicesService } from '../devices/devices.service';
 
 @Injectable()
 export class PasskeysService {
@@ -22,6 +23,7 @@ export class PasskeysService {
     @InjectRepository(PasskeyCredential)
     private readonly passkeyRepo: Repository<PasskeyCredential>,
     private readonly usersService: UsersService,
+    private readonly devicesService: DevicesService,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -82,6 +84,15 @@ export class PasskeysService {
 
     const { credential: reg } = verification.registrationInfo;
 
+    let deviceName: string | undefined;
+    if (deviceId !== undefined) {
+      const device = await this.devicesService.findById(deviceId);
+      if (device && device.userId === userId) {
+        deviceName = device.deviceName;
+        await this.devicesService.updateLastUsed(device.id);
+      }
+    }
+
     const passkey = this.passkeyRepo.create({
       userId,
       credentialId: reg.id,
@@ -90,6 +101,7 @@ export class PasskeysService {
       backedUp: verification.registrationInfo.credentialBackedUp,
       transports: credential.transports ?? [],
       ...(deviceId !== undefined && { deviceId }),
+      ...(deviceName !== undefined && { deviceName }),
     });
 
     await this.passkeyRepo.save(passkey);
@@ -98,10 +110,18 @@ export class PasskeysService {
     return { ok: true };
   }
 
-  async generateAuthenticationOptions(email: string, origin?: string) {
+  async generateAuthenticationOptions(email: string, deviceFingerprint?: string, origin?: string) {
     const user = await this.usersService.findByEmail(email);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
+    }
+
+    let deviceId: number | null = null;
+    if (deviceFingerprint) {
+      const device = await this.devicesService.findByFingerprint(user.id, deviceFingerprint);
+      if (device) {
+        deviceId = device.id;
+      }
     }
 
     const passkeys = await this.passkeyRepo.find({ where: { userId: user.id } });
@@ -125,7 +145,7 @@ export class PasskeysService {
       userId: user.id,
     });
 
-    return { sessionId, publicKey: options };
+    return { sessionId, publicKey: options, deviceId };
   }
 
   async verifyAuthenticationResponse(sessionId: string, credential: any, origin?: string) {
@@ -180,6 +200,7 @@ export class PasskeysService {
       select: {
         id: true,
         deviceName: true,
+        deviceId: true,
         createdAt: true,
         backedUp: true,
         transports: true,

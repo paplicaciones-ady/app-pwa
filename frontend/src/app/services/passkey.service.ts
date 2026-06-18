@@ -7,22 +7,30 @@ import { startRegistration, startAuthentication } from '@simplewebauthn/browser'
 export class PasskeyService {
   private readonly http = inject(HttpClient);
 
-  async registerPasskey(): Promise<boolean> {
+  async registerPasskey(deviceId?: number): Promise<boolean> {
     const opts = await lastValueFrom(
       this.http.post<{ publicKey: any }>('/api/auth/passkey/register/begin', {}),
     );
     const credential = await startRegistration(opts.publicKey);
+    const body: any = { credential };
+    if (deviceId !== undefined) {
+      body.deviceId = deviceId;
+    }
     await lastValueFrom(
-      this.http.post('/api/auth/passkey/register/complete', { credential }),
+      this.http.post('/api/auth/passkey/register/complete', body),
     );
     return true;
   }
 
-  async loginPasskey(email: string): Promise<string> {
+  async loginPasskey(email: string, deviceFingerprint?: string): Promise<string> {
+    const body: any = { email };
+    if (deviceFingerprint !== undefined) {
+      body.deviceFingerprint = deviceFingerprint;
+    }
     const opts = await lastValueFrom(
-      this.http.post<{ sessionId: string; publicKey: any }>(
+      this.http.post<{ sessionId: string; publicKey: any; deviceId?: number | null }>(
         '/api/auth/passkey/login/begin',
-        { email },
+        body,
       ),
     );
     const credential = await startAuthentication(opts.publicKey);
@@ -36,7 +44,7 @@ export class PasskeyService {
   }
 
   getPasskeys(): Observable<
-    { id: number; deviceName?: string; createdAt: string }[]
+    { id: number; deviceName?: string; deviceId?: number | null; createdAt: string }[]
   > {
     return this.http.get<any[]>('/api/auth/passkey');
   }
