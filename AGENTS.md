@@ -1,6 +1,6 @@
 # app-pwa
 
-Monorepo: `pwa-app/` (Angular 21 PWA + SSR) + `backend/` (NestJS + SQLite + WebAuthn).
+Monorepo: `pwa-app/` (Angular 21 PWA + SSR) + `backend/` (NestJS + PostgreSQL + WebAuthn).
 
 ## Quick start
 
@@ -27,7 +27,7 @@ npm run serve:ssr:pwa-app  # → :4000
 - **Dev proxy** via `proxy.conf.json` — `/api` → `localhost:3000`
 - **Prod SSR proxy** in `server.ts` — Express middleware with `pathRewrite: { '^/': '/api/' }` (Express strips `/api` prefix, must re-add)
 - **No CORS in production** — SSR proxy and browser share same origin
-- **DB**: SQLite at `backend/data/webauthn.db`, `synchronize: true` (dev only)
+- **DB**: PostgreSQL, credentials via `.env` (`DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`), `synchronize: true` (dev only)
 - **Challenges**: in-memory Map (lost on backend restart)
 
 ## WebAuthn
@@ -42,9 +42,10 @@ npm run serve:ssr:pwa-app  # → :4000
 |---------|-------------|
 | `npm start` | `ts-node src/main.ts` (port 3000) |
 | `npm run build` | `tsc` → `dist/` |
+| `npm run reset-tokens` | Limpia `microsoftRefreshToken` de todos los usuarios en BD |
 | No test script | |
 
-- NestJS 11, TypeORM, `better-sqlite3`, `bcrypt`, `@nestjs/jwt`, `@simplewebauthn/server`
+- NestJS 11, TypeORM, `bcrypt`, `@nestjs/jwt`, `@simplewebauthn/server`
 - `tsconfig.json`: `target: ES2021`, `module: commonjs`, `experimentalDecorators`, `emitDecoratorMetadata`
 - `app.enableCors()` in `main.ts`
 - JWT secret: `process.env.JWT_SECRET ?? 'dev-secret-change-in-production'`

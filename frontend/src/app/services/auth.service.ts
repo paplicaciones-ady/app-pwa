@@ -124,6 +124,12 @@ export class AuthService {
     }
   }
 
+  /** Solo para debug: invalida la sesión Microsoft en memoria sin hacer logout */
+  clearMicrosoftSession() {
+    this.microsoftSession.set(null);
+    this.localSession.set(true);
+  }
+
   async tryUpgradeSession(): Promise<boolean> {
     if (!this.localSession() || this.isFullyAuthenticated()) return false;
     try {

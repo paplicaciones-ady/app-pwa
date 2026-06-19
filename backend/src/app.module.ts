@@ -9,27 +9,20 @@ import { ProductsModule } from './products/products.module';
 import { PqrsModule } from './pqrs/pqrs.module';
 import { DevicesModule } from './devices/devices.module';
 import { MicrosoftAuthModule } from './microsoft-auth/microsoft-auth.module';
+import { CopilotStudioModule } from './copilot-studio/copilot-studio.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
     TypeOrmModule.forRootAsync({
       useFactory: () => {
-        if (process.env.DB_TYPE === 'postgres') {
-          return {
-            type: 'postgres',
-            host: process.env.DB_HOST ?? 'localhost',
-            port: +(process.env.DB_PORT ?? 5432),
-            username: process.env.DB_USER ?? 'app',
-            password: process.env.DB_PASSWORD ?? 'app-secret',
-            database: process.env.DB_NAME ?? 'webauthn',
-            autoLoadEntities: true,
-            synchronize: true,
-          };
-        }
         return {
-          type: 'better-sqlite3',
-          database: 'data/webauthn.db',
+          type: 'postgres',
+          host: process.env.DB_HOST ?? 'localhost',
+          port: +(process.env.DB_PORT ?? 5432),
+          username: process.env.DB_USER ?? 'app',
+          password: process.env.DB_PASSWORD ?? 'app-secret',
+          database: process.env.DB_NAME ?? 'webauthn',
           autoLoadEntities: true,
           synchronize: true,
         };
@@ -42,6 +35,7 @@ import { MicrosoftAuthModule } from './microsoft-auth/microsoft-auth.module';
     PqrsModule,
     DevicesModule,
     MicrosoftAuthModule,
+    CopilotStudioModule,
   ],
   controllers: [AppController],
 })

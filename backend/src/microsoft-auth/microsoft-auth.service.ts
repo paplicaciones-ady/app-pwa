@@ -42,6 +42,11 @@ export class MicrosoftAuthService {
   private readonly configRedirectUri: string;
   private readonly encryptionKey: string;
 
+  private readonly powerPlatformTokenCache = new Map<
+    number,
+    { token: string; expiresAt: number }
+  >();
+
   constructor(
     config: ConfigService,
     private readonly usersService: UsersService,
@@ -89,7 +94,7 @@ export class MicrosoftAuthService {
       client_id: this.clientId,
       response_type: 'code',
       redirect_uri: redirectUri,
-      scope: 'openid profile email offline_access',
+      scope: 'openid profile email offline_access https://api.powerplatform.com/.default',
       state,
       response_mode: 'query',
     });
@@ -187,7 +192,7 @@ export class MicrosoftAuthService {
       client_secret: this.clientSecret,
       refresh_token: decrypted,
       grant_type: 'refresh_token',
-      scope: 'openid profile email offline_access',
+      scope: 'openid profile email offline_access https://api.powerplatform.com/.default',
     });
 
     const res = await fetch(
@@ -200,7 +205,7 @@ export class MicrosoftAuthService {
     );
 
     if (!res.ok) {
-      user.microsoftRefreshToken = undefined!;
+      user.microsoftRefreshToken = null;
       await this.usersService.save(user);
       return false;
     }
@@ -212,6 +217,77 @@ export class MicrosoftAuthService {
     }
 
     return true;
+  }
+
+  async getPowerPlatformToken(userId: number): Promise<{ token: string; preview: string; tokenOid: string | null; tokenUpn: string | null } | null> {
+    const cached = this.powerPlatformTokenCache.get(userId);
+    if (cached && Date.now() < cached.expiresAt) {
+      const decoded = jwt.decode(cached.token) as Record<string, any> | null;
+      return {
+        token: cached.token,
+        preview: decoded?.oid ?? cached.token.slice(0, 30),
+        tokenOid: decoded?.oid ?? null,
+        tokenUpn: decoded?.upn ?? null,
+      };
+    }
+
+    const user = await this.usersService.findById(userId);
+    if (!user?.microsoftRefreshToken) return null;
+
+    const decrypted = this.decryptToken(user.microsoftRefreshToken);
+
+    const body = new URLSearchParams({
+      client_id: this.clientId,
+      client_secret: this.clientSecret,
+      refresh_token: decrypted,
+      grant_type: 'refresh_token',
+      scope: 'https://api.powerplatform.com/.default',
+    });
+
+    const res = await fetch(
+      `https://login.microsoftonline.com/${this.tenant}/oauth2/v2.0/token`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body,
+      },
+    );
+
+    if (!res.ok) {
+      const text = await res.text();
+      console.error('[Microsoft Service] getPowerPlatformToken failed:', res.status, text);
+      return null;
+    }
+
+    const data = (await res.json()) as MicrosoftTokenResponse;
+    const expiresAt =
+      Date.now() + ((data as any).expires_in - 60) * 1000;
+    this.powerPlatformTokenCache.set(userId, {
+      token: data.access_token,
+      expiresAt,
+    });
+
+    if (data.refresh_token) {
+      user.microsoftRefreshToken = this.encryptToken(data.refresh_token);
+      await this.usersService.save(user);
+    }
+
+    const decoded = jwt.decode(data.access_token) as Record<string, any> | null;
+
+    return {
+      token: data.access_token,
+      preview: decoded?.oid ?? data.access_token.slice(0, 30),
+      tokenOid: decoded?.oid ?? null,
+      tokenUpn: decoded?.upn ?? null,
+    };
+  }
+
+  clearPowerPlatformCache(userId?: number) {
+    if (userId) {
+      this.powerPlatformTokenCache.delete(userId);
+    } else {
+      this.powerPlatformTokenCache.clear();
+    }
   }
 
   private async exchangeCodeForTokens(

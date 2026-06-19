@@ -53,6 +53,13 @@ export class UsersService {
     return this.usersRepository.save(user);
   }
 
+  async clearMicrosoftRefreshToken(userId: number): Promise<void> {
+    await this.usersRepository.query(
+      'UPDATE users SET microsoftRefreshToken = NULL WHERE id = ?',
+      [userId],
+    );
+  }
+
   async create(email: string, passwordHash: string): Promise<User> {
     const user = this.usersRepository.create({ email, passwordHash });
     return this.usersRepository.save(user);
