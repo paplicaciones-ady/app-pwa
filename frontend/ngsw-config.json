@@ -36,7 +36,7 @@
       "cacheConfig": {
         "maxSize": 20,
         "maxAge": "1h",
-        "strategy": "freshness"
+        "strategy": "performance"
       }
     },
     {
@@ -45,7 +45,7 @@
       "cacheConfig": {
         "maxSize": 50,
         "maxAge": "1h",
-        "strategy": "freshness"
+        "strategy": "performance"
       }
     }
   ]

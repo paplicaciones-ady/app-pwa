@@ -217,7 +217,18 @@ export class CopilotStudioService implements OnModuleDestroy {
       }
 
       if (isStreamingTyping && activity.text) {
-        streamingText = (streamingText || '') + activity.text;
+        if (!streamingText) {
+          streamingText = activity.text;
+        } else {
+          const maxOverlap = Math.min(streamingText.length, activity.text.length);
+          let overlap = 0;
+          for (let i = 1; i <= maxOverlap; i++) {
+            if (streamingText.endsWith(activity.text.slice(0, i))) {
+              overlap = i;
+            }
+          }
+          streamingText += activity.text.slice(overlap);
+        }
       }
 
       if (activity.name && activity.name.includes('DynamicPlan')) {
@@ -244,7 +255,7 @@ export class CopilotStudioService implements OnModuleDestroy {
     const url = getCopilotStudioSubscribeUrl(settings, conversationId);
     convLog.log('subscribeForReply', 'Iniciando subscribe POST', { url });
 
-    const subscribeTask = async (): Promise<string | null> => {
+    try {
       const gen = (client as any).postRequestAsync(url, {}, 'POST') as AsyncGenerator<Activity>;
       for await (const activity of gen) {
         if (activity.type === ActivityTypes.Message && activity.text) {
@@ -256,19 +267,10 @@ export class CopilotStudioService implements OnModuleDestroy {
           break;
         }
       }
-      return null;
-    };
-
-    const timeout = new Promise<string | null>((_, reject) =>
-      setTimeout(() => reject(new Error('Subscribe timeout 60s')), 60_000),
-    );
-
-    try {
-      return await Promise.race([subscribeTask(), timeout]);
     } catch (err: any) {
-      convLog.log('subscribeForReply', 'Subscribe error/timeout', { error: err.message });
-      return null;
+      convLog.log('subscribeForReply', 'Subscribe error', { error: err.message });
     }
+    return null;
   }
 
   async clearSession(userId: number): Promise<void> {

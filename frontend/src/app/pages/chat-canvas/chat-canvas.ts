@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { lastValueFrom } from 'rxjs';
 import { FormsModule } from '@angular/forms';
+import { MarkdownPipe } from '../../pipes/markdown.pipe';
 import { AuthService } from '../../services/auth.service';
 
 interface ChatMessage {
@@ -13,7 +14,7 @@ interface ChatMessage {
 @Component({
   selector: 'app-chat-canvas',
   standalone: true,
-  imports: [RouterLink, FormsModule],
+  imports: [RouterLink, FormsModule, MarkdownPipe],
   template: `
     <div class="chat-container">
       <header class="chat-header">
@@ -32,7 +33,11 @@ interface ChatMessage {
         }
         @for (msg of messages(); track $index) {
           <div class="message" [class.user]="msg.role === 'user'" [class.assistant]="msg.role === 'assistant'">
-            <div class="bubble">{{ msg.text }}</div>
+            @if (msg.role === 'assistant') {
+              <div class="bubble" [innerHTML]="msg.text | markdown"></div>
+            } @else {
+              <div class="bubble">{{ msg.text }}</div>
+            }
           </div>
         }
         @if (loading()) {
@@ -114,7 +119,29 @@ interface ChatMessage {
     .message.assistant .bubble {
       background: #f0f0f0; color: #333;
       border-bottom-left-radius: 4px;
+      line-height: 1.6;
     }
+
+    ::ng-deep .message.assistant .bubble p { margin: 0 0 0.5rem 0; }
+    ::ng-deep .message.assistant .bubble p:last-child { margin-bottom: 0; }
+    ::ng-deep .message.assistant .bubble code {
+      background: #e8e8e8; padding: 0.15rem 0.4rem; border-radius: 4px;
+      font-size: 0.85rem; font-family: 'Courier New', monospace;
+    }
+    ::ng-deep .message.assistant .bubble pre {
+      background: #1e1e1e; color: #d4d4d4; padding: 0.8rem; border-radius: 8px;
+      overflow-x: auto; margin: 0.5rem 0;
+    }
+    ::ng-deep .message.assistant .bubble pre code {
+      background: transparent; padding: 0; color: inherit; font-size: 0.85rem;
+    }
+    ::ng-deep .message.assistant .bubble ul,
+    ::ng-deep .message.assistant .bubble ol {
+      padding-left: 1.5rem; margin: 0.25rem 0;
+    }
+    ::ng-deep .message.assistant .bubble li { margin-bottom: 0.15rem; }
+    ::ng-deep .message.assistant .bubble a { color: #007bff; text-decoration: underline; }
+    ::ng-deep .message.assistant .bubble strong { font-weight: 600; }
 
     .typing { display: flex; gap: 4px; align-items: center; padding: 0.6rem 1.2rem; }
 
