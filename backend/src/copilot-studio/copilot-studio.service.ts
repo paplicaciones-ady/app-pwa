@@ -1,6 +1,6 @@
 import { Injectable, UnauthorizedException, InternalServerErrorException, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { CopilotStudioClient, ConnectionSettings } from '@microsoft/agents-copilotstudio-client';
+import { CopilotStudioClient, ConnectionSettings, getCopilotStudioSubscribeUrl } from '@microsoft/agents-copilotstudio-client';
 import { Activity, ActivityTypes } from '@microsoft/agents-activity';
 import { MicrosoftAuthService } from '../microsoft-auth/microsoft-auth.service';
 import * as fs from 'node:fs';
@@ -76,10 +76,8 @@ export class CopilotStudioService implements OnModuleDestroy {
     });
 
     convLog.log('sendMessage', 'Creando CopilotStudioClient fresco para el mensaje');
-    const client = new CopilotStudioClient(
-      { environmentId: this.environmentId, agentIdentifier: this.agentIdentifier, useExperimentalEndpoint: true } as ConnectionSettings,
-      ppToken.token,
-    );
+    const settings = { environmentId: this.environmentId, agentIdentifier: this.agentIdentifier, useExperimentalEndpoint: true } as ConnectionSettings;
+    const client = new CopilotStudioClient(settings, ppToken.token);
 
     const activity = new Activity('message');
     activity.text = text;
@@ -98,21 +96,28 @@ export class CopilotStudioService implements OnModuleDestroy {
     let finalText = streamingText || replyText || '';
 
     if (!finalText && hasPlanEvents) {
-      convLog.log('sendMessage', 'Plan detectado sin reply final, esperando 15s y re-asking');
-      await new Promise(r => setTimeout(r, 15_000));
+      convLog.log('sendMessage', 'Plan detectado sin reply final, intentando subscribe POST');
+      const subscribeReply = await this.subscribeForReply(client, settings, session.conversationId, convLog);
+      if (subscribeReply) {
+        finalText = subscribeReply;
+        convLog.log('sendMessage', 'Subscribe POST exitoso', { replyPreview: finalText.slice(0, 200) });
+      } else {
+        convLog.log('sendMessage', 'Subscribe POST no dio reply, fallback a re-ask en 5s');
+        await new Promise(r => setTimeout(r, 5_000));
 
-      try {
-        const activity2 = new Activity('message');
-        activity2.text = text;
-        activity2.conversation = { id: session.conversationId };
-        const retry = await this.collectReplies(
-          client.executeStreaming(activity2, session.conversationId),
-          convLog,
-        );
-        finalText = retry.streamingText || retry.text || '';
-        convLog.log('sendMessage', 'Re-ask completado', { replyPreview: finalText.slice(0, 200) });
-      } catch (err: any) {
-        convLog.log('sendMessage', 'Re-ask falló', { error: err.message });
+        try {
+          const activity2 = new Activity('message');
+          activity2.text = text;
+          activity2.conversation = { id: session.conversationId };
+          const retry = await this.collectReplies(
+            client.executeStreaming(activity2, session.conversationId),
+            convLog,
+          );
+          finalText = retry.streamingText || retry.text || '';
+          convLog.log('sendMessage', 'Re-ask completado', { replyPreview: finalText.slice(0, 200) });
+        } catch (err: any) {
+          convLog.log('sendMessage', 'Re-ask falló', { error: err.message });
+        }
       }
     }
 
@@ -228,6 +233,42 @@ export class CopilotStudioService implements OnModuleDestroy {
     });
 
     return { text, hasPlanEvents, streamingText };
+  }
+
+  private async subscribeForReply(
+    client: CopilotStudioClient,
+    settings: ConnectionSettings,
+    conversationId: string,
+    convLog: ConversationLog,
+  ): Promise<string | null> {
+    const url = getCopilotStudioSubscribeUrl(settings, conversationId);
+    convLog.log('subscribeForReply', 'Iniciando subscribe POST', { url });
+
+    const subscribeTask = async (): Promise<string | null> => {
+      const gen = (client as any).postRequestAsync(url, {}, 'POST') as AsyncGenerator<Activity>;
+      for await (const activity of gen) {
+        if (activity.type === ActivityTypes.Message && activity.text) {
+          convLog.log('subscribeForReply', 'Reply recibido via subscribe POST', { preview: activity.text.slice(0, 200) });
+          return activity.text;
+        }
+        if (activity.type === ActivityTypes.EndOfConversation) {
+          convLog.log('subscribeForReply', 'EndOfConversation en subscribe');
+          break;
+        }
+      }
+      return null;
+    };
+
+    const timeout = new Promise<string | null>((_, reject) =>
+      setTimeout(() => reject(new Error('Subscribe timeout 60s')), 60_000),
+    );
+
+    try {
+      return await Promise.race([subscribeTask(), timeout]);
+    } catch (err: any) {
+      convLog.log('subscribeForReply', 'Subscribe error/timeout', { error: err.message });
+      return null;
+    }
   }
 
   async clearSession(userId: number): Promise<void> {
