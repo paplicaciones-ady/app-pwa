@@ -19,7 +19,7 @@ interface ChatMessage {
       <header class="chat-header">
         <a routerLink="/home" class="back-btn">← Volver</a>
         <span class="title">Copilot Studio</span>
-        <span class="spacer"></span>
+        <button class="new-chat-btn" (click)="newChat()" [disabled]="loading()">+ Nueva</button>
       </header>
 
       <div class="messages">
@@ -77,7 +77,13 @@ interface ChatMessage {
     }
 
     .title { flex: 1; text-align: center; font-size: 1rem; }
-    .spacer { width: 60px; }
+
+    .new-chat-btn {
+      background: rgba(255,255,255,0.2); color: #fff; border: 1px solid rgba(255,255,255,0.4);
+      border-radius: 16px; padding: 0.3rem 0.8rem; font-size: 0.8rem; cursor: pointer;
+      white-space: nowrap;
+    }
+    .new-chat-btn:disabled { opacity: 0.5; cursor: default; }
 
     .messages {
       flex: 1; overflow-y: auto; padding: 1rem;
@@ -154,6 +160,7 @@ export class ChatCanvas {
   protected readonly messages = signal<ChatMessage[]>([]);
   protected readonly inputText = signal('');
   protected readonly loading = signal(false);
+  private readonly sessionId = signal<string | null>(null);
 
   protected async send() {
     const text = this.inputText().trim();
@@ -164,11 +171,30 @@ export class ChatCanvas {
     this.loading.set(true);
 
     try {
+      let sid = this.sessionId();
+
+      // Create session if none active
+      if (!sid) {
+        const sessionRes = await lastValueFrom(
+          this.http.post<{ sessionId: string; welcome: string }>('/api/copilot/session', {}),
+        );
+        sid = sessionRes.sessionId;
+        this.sessionId.set(sid);
+        if (sessionRes.welcome) {
+          this.messages.update((m) => [...m, { role: 'assistant', text: sessionRes.welcome }]);
+        }
+      }
+
       const res = await lastValueFrom(
-        this.http.post<{ reply: string }>('/api/copilot/chat', { message: text }),
+        this.http.post<{ reply: string; sessionId: string }>('/api/copilot/chat', {
+          message: text,
+          sessionId: sid,
+        }),
       );
       this.messages.update((m) => [...m, { role: 'assistant', text: res.reply }]);
     } catch (err: any) {
+      // If session expired / invalid, reset so next message retries fresh
+      this.sessionId.set(null);
       this.messages.update((m) => [
         ...m,
         { role: 'assistant', text: 'Error al conectar con Copilot Studio.' },
@@ -176,5 +202,11 @@ export class ChatCanvas {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  protected newChat() {
+    if (this.loading()) return;
+    this.sessionId.set(null);
+    this.messages.set([]);
   }
 }

@@ -1,6 +1,7 @@
 import { Controller, Post, Body, Req, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
 import { MicrosoftAuthService } from '../microsoft-auth/microsoft-auth.service';
 import { UsersService } from '../users/users.service';
+import { CopilotStudioService } from './copilot-studio.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('copilot')
@@ -8,6 +9,7 @@ export class CopilotStudioController {
   constructor(
     private readonly microsoftAuthService: MicrosoftAuthService,
     private readonly usersService: UsersService,
+    private readonly copilotStudioService: CopilotStudioService,
   ) {}
 
   @Post('debug-token')
@@ -68,10 +70,17 @@ export class CopilotStudioController {
     }
   }
 
+  @Post('session')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async createSession(@Req() req: any) {
+    return this.copilotStudioService.createNewSession(req.user.id);
+  }
+
   @Post('chat')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  async chat(@Req() req: any, @Body() body: { message: string }) {
-    return { reply: `Copilot Studio recibió: "${body.message}". (integración pendiente)` };
+  async chat(@Req() req: any, @Body() body: { message: string; sessionId?: string }) {
+    return this.copilotStudioService.sendMessage(req.user.id, body.message, body.sessionId);
   }
 }
