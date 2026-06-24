@@ -1,7 +1,7 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { PqrsService, Pqrs, CreatePqrsData } from '../../services/pqrs.service';
+import { PqrsStore } from '../../services/pqrs.store';
 import { ProductService, Product } from '../../services/product.service';
 
 const TYPE_LABELS: Record<string, string> = {
@@ -95,11 +95,12 @@ const TYPE_LABELS: Record<string, string> = {
   `,
 })
 export class Home implements OnInit {
-  private readonly pqrsService = inject(PqrsService);
+  private readonly pqrsStore = inject(PqrsStore);
   private readonly productService = inject(ProductService);
 
   protected readonly TYPE_LABELS = TYPE_LABELS;
-  protected readonly pqrsList = signal<Pqrs[]>([]);
+  protected readonly pqrsList = this.pqrsStore.allPqrs;
+  protected readonly syncStatus = this.pqrsStore.syncStatus;
   protected readonly products = signal<Product[]>([]);
   protected readonly showForm = signal(false);
   protected readonly submitting = signal(false);
@@ -113,16 +114,9 @@ export class Home implements OnInit {
   };
 
   ngOnInit() {
-    this.loadPqrs();
+    this.pqrsStore.loadPqrs();
     this.productService.getAll().subscribe({
       next: (list) => this.products.set(list),
-    });
-  }
-
-  private loadPqrs() {
-    this.pqrsService.getAll().subscribe({
-      next: (list) => this.pqrsList.set(list),
-      error: () => this.error.set('Error al cargar PQRS'),
     });
   }
 
@@ -131,31 +125,28 @@ export class Home implements OnInit {
     this.error.set(null);
   }
 
-  protected onSubmit() {
+  protected async onSubmit() {
     if (!this.formData.type || !this.formData.title || !this.formData.description || !this.formData.productId) return;
 
     this.submitting.set(true);
     this.error.set(null);
 
-    this.pqrsService.create({
-      type: this.formData.type,
-      title: this.formData.title,
-      description: this.formData.description,
-      productId: Number(this.formData.productId),
-    }).subscribe({
-      next: () => {
-        this.submitting.set(false);
-        this.showForm.set(false);
-        this.formData.type = '';
-        this.formData.title = '';
-        this.formData.description = '';
-        this.formData.productId = '';
-        this.loadPqrs();
-      },
-      error: (err) => {
-        this.submitting.set(false);
-        this.error.set(err.error?.message ?? 'Error al crear PQRS');
-      },
-    });
+    try {
+      await this.pqrsStore.createPqrs({
+        type: this.formData.type,
+        title: this.formData.title,
+        description: this.formData.description,
+        productId: Number(this.formData.productId),
+      });
+      this.submitting.set(false);
+      this.showForm.set(false);
+      this.formData.type = '';
+      this.formData.title = '';
+      this.formData.description = '';
+      this.formData.productId = '';
+    } catch (err: any) {
+      this.submitting.set(false);
+      this.error.set(err?.error?.message ?? 'Error al crear PQRS');
+    }
   }
 }

@@ -2,6 +2,7 @@ import { Component, inject, effect } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { AuthService } from './services/auth.service';
 import { ConnectivityService } from './services/connectivity.service';
+import { BackendHealthService } from './services/backend-health.service';
 import { Navbar } from './components/navbar/navbar';
 import { BottomNav } from './components/bottom-nav/bottom-nav';
 
@@ -16,7 +17,9 @@ export class App {
   constructor() {
     const as = inject(AuthService);
     const cs = inject(ConnectivityService);
+    const hs = inject(BackendHealthService);
     as.init();
+    hs.init();
     cs.init();
 
     effect(() => {

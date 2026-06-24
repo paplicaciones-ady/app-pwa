@@ -28,25 +28,5 @@
         "files": ["/**/*.(svg|cur|jpg|jpeg|png|apng|webp|avif|gif|otf|ttf|woff|woff2)"]
       }
     }
-  ],
-  "dataGroups": [
-    {
-      "name": "api-products",
-      "urls": ["/api/products"],
-      "cacheConfig": {
-        "maxSize": 20,
-        "maxAge": "1h",
-        "strategy": "performance"
-      }
-    },
-    {
-      "name": "api-pqrs",
-      "urls": ["/api/pqrs"],
-      "cacheConfig": {
-        "maxSize": 50,
-        "maxAge": "1h",
-        "strategy": "performance"
-      }
-    }
   ]
 }
