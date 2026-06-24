@@ -122,6 +122,14 @@ export class PqrsStore {
     } as Pqrs;
   }
 
+  async retryItem(localId: string): Promise<void> {
+    await this.syncService.retryItem(localId);
+  }
+
+  async discardItem(localId: string): Promise<void> {
+    await this.syncService.discardItem(localId);
+  }
+
   async loadProducts(): Promise<void> {
     if (!isPlatformBrowser(this.platformId)) return;
 

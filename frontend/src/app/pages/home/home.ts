@@ -78,6 +78,12 @@ const TYPE_LABELS: Record<string, string> = {
             <span>Producto: <strong>{{ pqrs.productName || '—' }}</strong></span>
             <span>Usuario: <strong>{{ pqrs.userEmail || '—' }}</strong></span>
           </div>
+          @if (pqrs._status === 'failed') {
+            <div class="card-actions">
+              <button class="btn-sm btn-retry" (click)="retry(pqrs._localId!)">Reintentar</button>
+              <button class="btn-sm btn-discard" (click)="discard(pqrs._localId!)">Descartar</button>
+            </div>
+          }
         </div>
       }
     </div>
@@ -109,6 +115,12 @@ const TYPE_LABELS: Record<string, string> = {
     .desc { margin: 0 0 0.75rem; color: #555; line-height: 1.4; }
     .card-meta { display: flex; gap: 1rem; font-size: 0.85rem; color: #666; }
     .error { background: #f8d7da; color: #721c24; padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.9rem; }
+    .card-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+    .btn-sm { padding: 0.3rem 0.75rem; border: none; border-radius: 4px; font-size: 0.8rem; cursor: pointer; }
+    .btn-retry { background: #ffc107; color: #333; }
+    .btn-retry:hover { background: #e0a800; }
+    .btn-discard { background: #6c757d; color: #fff; }
+    .btn-discard:hover { background: #5a6268; }
   `,
 })
 export class Home implements OnInit {
@@ -138,6 +150,14 @@ export class Home implements OnInit {
   protected toggleForm() {
     this.showForm.update((v) => !v);
     this.error.set(null);
+  }
+
+  protected async retry(localId: string) {
+    await this.pqrsStore.retryItem(localId);
+  }
+
+  protected async discard(localId: string) {
+    await this.pqrsStore.discardItem(localId);
   }
 
   protected async onSubmit() {

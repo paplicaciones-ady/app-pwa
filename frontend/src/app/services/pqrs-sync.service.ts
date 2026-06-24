@@ -16,6 +16,7 @@ export interface PendingPqrs {
   status: 'pending' | 'syncing' | 'failed';
   retryCount: number;
   lastError?: string;
+  nextRetryAt?: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -26,9 +27,16 @@ export class PqrsSyncService {
   private readonly connectivity = inject(ConnectivityService);
   private readonly destroyRef = inject(DestroyRef);
 
+  private readonly RETRY_BASE_MS = 1_000;
+  private readonly RETRY_MAX_MS = 60_000;
+  private readonly RETRY_JITTER_MS = 500;
+  private readonly MAX_RETRIES = 10;
+  private readonly MAX_CONCURRENT = 3;
+
   readonly pendingPqrs = signal<PendingPqrs[]>([]);
   private flushing = false;
   private onItemConfirmedCb: ((created: Pqrs, localId: string) => void) | null = null;
+  private scheduledFlushTimeout: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
@@ -38,9 +46,12 @@ export class PqrsSyncService {
 
     effect(() => {
       if (this.connectivity.isOnline()) {
+        this.cancelScheduledFlush();
         this.flush();
       }
     });
+
+    this.destroyRef.onDestroy(() => this.cancelScheduledFlush());
   }
 
   registerOnItemConfirmed(cb: (created: Pqrs, localId: string) => void): void {
@@ -86,8 +97,6 @@ export class PqrsSyncService {
       const dbs = await indexedDB.databases();
       return dbs.some(d => d.name === name);
     } catch {
-      // indexedDB.databases() no soportado en este navegador
-      // intentar abrir la DB para ver si existe
       try {
         const db = await new Promise<IDBDatabase | null>((resolve) => {
           const req = indexedDB.open(name);
@@ -112,6 +121,7 @@ export class PqrsSyncService {
       createdAt: new Date().toISOString(),
       status: 'pending',
       retryCount: 0,
+      nextRetryAt: Date.now(),
     };
 
     this.pendingPqrs.update(list => [...list, item]);
@@ -124,47 +134,126 @@ export class PqrsSyncService {
     if (this.flushing) return;
 
     const items = await this.indexedDb.getAll<PendingPqrs>('outbox');
-    const pendings = items.filter(i => i.status === 'pending' || i.status === 'failed');
-    if (pendings.length === 0) return;
+    const now = Date.now();
+    const pendings = items.filter(
+      i => (i.status === 'pending' || i.status === 'failed')
+        && i.retryCount < this.MAX_RETRIES
+        && (!i.nextRetryAt || i.nextRetryAt <= now),
+    );
+    if (pendings.length === 0) {
+      this.scheduleNextFlush(items);
+      return;
+    }
 
     this.flushing = true;
 
     try {
-      for (const item of pendings) {
-        this.pendingPqrs.update(list =>
-          list.map(i => i.localId === item.localId ? { ...i, status: 'syncing' as const } : i),
-        );
-
-        try {
-          const created = await firstValueFrom(
-            this.http.post<Pqrs>('/api/pqrs', {
-              type: item.type,
-              title: item.title,
-              description: item.description,
-              productId: item.productId,
-            }),
-          );
-          await this.indexedDb.delete('outbox', item.localId);
-          this.pendingPqrs.update(list => list.filter(i => i.localId !== item.localId));
-          if (this.onItemConfirmedCb) {
-            this.onItemConfirmedCb(created, item.localId);
-          }
-        } catch (e: any) {
-          const updated: PendingPqrs = {
-            ...item,
-            status: 'failed',
-            retryCount: item.retryCount + 1,
-            lastError: e?.error?.message ?? e?.message ?? 'Error de conexión',
-          };
-          this.pendingPqrs.update(list =>
-            list.map(i => i.localId === item.localId ? updated : i),
-          );
-          this.indexedDb.put('outbox', updated);
-        }
+      for (let i = 0; i < pendings.length; i += this.MAX_CONCURRENT) {
+        const batch = pendings.slice(i, i + this.MAX_CONCURRENT);
+        await Promise.all(batch.map(item => this.processItem(item)));
       }
     } finally {
       this.flushing = false;
     }
+
+    const remaining = await this.indexedDb.getAll<PendingPqrs>('outbox');
+    this.scheduleNextFlush(remaining);
+  }
+
+  private async processItem(item: PendingPqrs): Promise<void> {
+    this.pendingPqrs.update(list =>
+      list.map(i => i.localId === item.localId ? { ...i, status: 'syncing' as const } : i),
+    );
+
+    try {
+      const created = await firstValueFrom(
+        this.http.post<Pqrs>('/api/pqrs', {
+          type: item.type,
+          title: item.title,
+          description: item.description,
+          productId: item.productId,
+        }),
+      );
+      await this.indexedDb.delete('outbox', item.localId);
+      this.pendingPqrs.update(list => list.filter(i => i.localId !== item.localId));
+      if (this.onItemConfirmedCb) {
+        this.onItemConfirmedCb(created, item.localId);
+      }
+    } catch (e: any) {
+      const newCount = item.retryCount + 1;
+      const delay = this.calculateBackoff(newCount);
+      const updated: PendingPqrs = {
+        ...item,
+        status: newCount >= this.MAX_RETRIES ? 'failed' : 'pending',
+        retryCount: newCount,
+        nextRetryAt: newCount >= this.MAX_RETRIES ? undefined : Date.now() + delay,
+        lastError: e?.error?.message ?? e?.message ?? 'Error de conexión',
+      };
+      this.pendingPqrs.update(list =>
+        list.map(i => i.localId === item.localId ? updated : i),
+      );
+      this.indexedDb.put('outbox', updated);
+    }
+  }
+
+  private calculateBackoff(retryCount: number): number {
+    const exponential = Math.min(
+      this.RETRY_BASE_MS * Math.pow(2, retryCount - 1),
+      this.RETRY_MAX_MS,
+    );
+    const jitter = Math.random() * this.RETRY_JITTER_MS * 2 - this.RETRY_JITTER_MS;
+    return Math.max(0, exponential + jitter);
+  }
+
+  private scheduleNextFlush(items: PendingPqrs[]): void {
+    this.cancelScheduledFlush();
+
+    const futures = items.filter(
+      r => (r.status === 'pending' || r.status === 'failed')
+        && r.nextRetryAt != null
+        && r.nextRetryAt > Date.now()
+        && r.retryCount < this.MAX_RETRIES,
+    );
+    if (futures.length === 0) return;
+
+    const next = Math.min(...futures.map(r => r.nextRetryAt!));
+    const delay = Math.max(0, next - Date.now());
+    this.scheduledFlushTimeout = setTimeout(() => this.flush(), delay);
+  }
+
+  private cancelScheduledFlush(): void {
+    if (this.scheduledFlushTimeout) {
+      clearTimeout(this.scheduledFlushTimeout);
+      this.scheduledFlushTimeout = null;
+    }
+  }
+
+  async retryItem(localId: string): Promise<void> {
+    const items = await this.indexedDb.getAll<PendingPqrs>('outbox');
+    const item = items.find(i => i.localId === localId);
+    if (!item) return;
+
+    const updated: PendingPqrs = {
+      ...item,
+      status: 'pending',
+      retryCount: 0,
+      nextRetryAt: Date.now(),
+      lastError: undefined,
+    };
+    this.pendingPqrs.update(list =>
+      list.map(i => i.localId === localId ? updated : i),
+    );
+    await this.indexedDb.put('outbox', updated);
+    this.cancelScheduledFlush();
+    this.flush();
+  }
+
+  async discardItem(localId: string): Promise<void> {
+    await this.indexedDb.delete('outbox', localId);
+    this.pendingPqrs.update(list => list.filter(i => i.localId !== localId));
+
+    const remaining = await this.indexedDb.getAll<PendingPqrs>('outbox');
+    this.scheduleNextFlush(remaining);
   }
 
   async loadFromDb(): Promise<void> {
