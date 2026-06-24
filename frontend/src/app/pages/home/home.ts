@@ -2,7 +2,6 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PqrsStore } from '../../services/pqrs.store';
-import { ProductService, Product } from '../../services/product.service';
 
 const TYPE_LABELS: Record<string, string> = {
   peticion: 'Petición',
@@ -43,6 +42,9 @@ const TYPE_LABELS: Record<string, string> = {
             @for (p of products(); track p.id) {
               <option [value]="p.id">{{ p.name }}</option>
             }
+            @if (productsSyncStatus() === 'error' && products().length === 0) {
+              <option value="" disabled>Sin conexión — sin productos</option>
+            }
           </select>
           <button type="submit" [disabled]="submitting()">
             {{ submitting() ? 'Enviando...' : 'Enviar' }}
@@ -54,13 +56,23 @@ const TYPE_LABELS: Record<string, string> = {
         <p class="empty">No hay PQRS registradas</p>
       }
 
-      @for (pqrs of pqrsList(); track pqrs.id) {
-        <div class="card">
+      @for (pqrs of pqrsList(); track pqrs.id || pqrs._localId) {
+        <div class="card" [class.card--pending]="pqrs._localId" [class.card--syncing]="pqrs._status === 'syncing'" [class.card--failed]="pqrs._status === 'failed'">
           <div class="card-header">
             <span class="badge" [class]="pqrs.type">{{ TYPE_LABELS[pqrs.type] || pqrs.type }}</span>
+            @if (pqrs._localId) {
+              <span class="badge badge-pending">
+                @if (pqrs._status === 'syncing') { Enviando... }
+                @else if (pqrs._status === 'failed') { Falló }
+                @else { Pendiente }
+              </span>
+            }
             <span class="date">{{ pqrs.createdAt | date:'short' }}</span>
           </div>
           <h3>{{ pqrs.title }}</h3>
+          @if (pqrs._lastError) {
+            <p class="error-detail">{{ pqrs._lastError }}</p>
+          }
           <p class="desc">{{ pqrs.description }}</p>
           <div class="card-meta">
             <span>Producto: <strong>{{ pqrs.productName || '—' }}</strong></span>
@@ -87,6 +99,11 @@ const TYPE_LABELS: Record<string, string> = {
     .badge.queja { background: #dc3545; }
     .badge.reclamo { background: #fd7e14; }
     .badge.sugerencia { background: #6f42c1; }
+    .badge-pending { background: #856404; }
+    .card--pending { border: 1.5px dashed #ffc107; opacity: .85; background: #fffbe6; }
+    .card--syncing { border: 1.5px dashed #17a2b8; opacity: .85; background: #e6f7ff; }
+    .card--failed { border: 1.5px dashed #dc3545; opacity: .85; background: #fff5f5; }
+    .error-detail { margin: -0.25rem 0 0.5rem; font-size: 0.8rem; color: #dc3545; }
     .date { font-size: 0.8rem; color: #888; }
     h3 { margin: 0 0 0.5rem; font-size: 1.1rem; }
     .desc { margin: 0 0 0.75rem; color: #555; line-height: 1.4; }
@@ -96,12 +113,12 @@ const TYPE_LABELS: Record<string, string> = {
 })
 export class Home implements OnInit {
   private readonly pqrsStore = inject(PqrsStore);
-  private readonly productService = inject(ProductService);
 
   protected readonly TYPE_LABELS = TYPE_LABELS;
-  protected readonly pqrsList = this.pqrsStore.allPqrs;
+  protected readonly pqrsList = this.pqrsStore.visiblePqrs;
   protected readonly syncStatus = this.pqrsStore.syncStatus;
-  protected readonly products = signal<Product[]>([]);
+  protected readonly products = this.pqrsStore.products;
+  protected readonly productsSyncStatus = this.pqrsStore.productsSyncStatus;
   protected readonly showForm = signal(false);
   protected readonly submitting = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -115,9 +132,7 @@ export class Home implements OnInit {
 
   ngOnInit() {
     this.pqrsStore.loadPqrs();
-    this.productService.getAll().subscribe({
-      next: (list) => this.products.set(list),
-    });
+    this.pqrsStore.loadProducts();
   }
 
   protected toggleForm() {

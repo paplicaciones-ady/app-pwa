@@ -4,6 +4,9 @@ import { Observable } from 'rxjs';
 
 export interface Pqrs {
   id: number;
+  _localId?: string;
+  _status?: 'pending' | 'syncing' | 'failed';
+  _lastError?: string;
   type: string;
   title: string;
   description: string;

@@ -1,9 +1,10 @@
-import { Injectable, inject, signal, PLATFORM_ID } from '@angular/core';
+import { Injectable, inject, signal, PLATFORM_ID, effect, DestroyRef } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { CreatePqrsData } from './pqrs.service';
+import { CreatePqrsData, Pqrs } from './pqrs.service';
 import { IndexedDbService } from './indexed-db.service';
+import { ConnectivityService } from './connectivity.service';
 
 export interface PendingPqrs {
   localId: string;
@@ -22,15 +23,28 @@ export class PqrsSyncService {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly http = inject(HttpClient);
   private readonly indexedDb = inject(IndexedDbService);
+  private readonly connectivity = inject(ConnectivityService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly pendingPqrs = signal<PendingPqrs[]>([]);
   private flushing = false;
+  private onItemConfirmedCb: ((created: Pqrs, localId: string) => void) | null = null;
 
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
       this.migrateFromOldDb();
       this.loadFromDb();
     }
+
+    effect(() => {
+      if (this.connectivity.isOnline()) {
+        this.flush();
+      }
+    });
+  }
+
+  registerOnItemConfirmed(cb: (created: Pqrs, localId: string) => void): void {
+    this.onItemConfirmedCb = cb;
   }
 
   /** Migración única: pasa datos de pwa-app-queue → pwa-app.outbox */
@@ -122,8 +136,8 @@ export class PqrsSyncService {
         );
 
         try {
-          await firstValueFrom(
-            this.http.post('/api/pqrs', {
+          const created = await firstValueFrom(
+            this.http.post<Pqrs>('/api/pqrs', {
               type: item.type,
               title: item.title,
               description: item.description,
@@ -132,6 +146,9 @@ export class PqrsSyncService {
           );
           await this.indexedDb.delete('outbox', item.localId);
           this.pendingPqrs.update(list => list.filter(i => i.localId !== item.localId));
+          if (this.onItemConfirmedCb) {
+            this.onItemConfirmedCb(created, item.localId);
+          }
         } catch (e: any) {
           const updated: PendingPqrs = {
             ...item,
@@ -150,7 +167,7 @@ export class PqrsSyncService {
     }
   }
 
-  private async loadFromDb(): Promise<void> {
+  async loadFromDb(): Promise<void> {
     try {
       const items = await this.indexedDb.getAll<PendingPqrs>('outbox');
       this.pendingPqrs.set(items);

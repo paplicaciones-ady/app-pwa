@@ -5,7 +5,7 @@ import { isPlatformBrowser } from '@angular/common';
 export class IndexedDbService {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly dbName = 'pwa-app';
-  private readonly version = 2;
+  private readonly version = 3;
 
   private dbPromise: Promise<IDBDatabase | null> | null = null;
 
@@ -26,6 +26,9 @@ export class IndexedDbService {
         }
         if (!db.objectStoreNames.contains('pqrs')) {
           db.createObjectStore('pqrs', { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains('products')) {
+          db.createObjectStore('products', { keyPath: 'id' });
         }
       };
 
