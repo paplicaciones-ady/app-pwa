@@ -11,23 +11,28 @@ import { MicrosoftAuthService } from '../../services/microsoft-auth.service';
   standalone: true,
   imports: [RouterLink, RouterLinkActive],
   template: `
-    <nav class="bottom-nav">
-      <div class="nav-items">
-        <a routerLink="/home" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-          <span class="icon">🏠</span>
-          <span class="label">Inicio</span>
-        </a>
-        @if (authService.isLoggedIn()) {
-          <a routerLink="/profile" routerLinkActive="active">
-            <span class="icon">👤</span>
-            <span class="label">Perfil</span>
-          </a>
-        }
-      </div>
+    <nav class="tabbar">
+      <a routerLink="/home" routerLinkActive="on" [routerLinkActiveOptions]="{ exact: true }" class="tab">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1v-8Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+        <span>Inicio</span>
+      </a>
 
-      <button class="chat-bubble" (click)="onBubbleClick()">
-        <span class="chat-icon">💬</span>
+      <button class="fab" (click)="onBubbleClick()">
+        <span class="fab-inner">💬</span>
+        <span class="pulse"></span>
       </button>
+
+      @if (authService.isLoggedIn()) {
+        <a routerLink="/profile" routerLinkActive="on" class="tab">
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.6" stroke="currentColor" stroke-width="2"/><path d="M5 20c0-3.4 3.1-6 7-6s7 2.6 7 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <span>Perfil</span>
+        </a>
+      } @else {
+        <a routerLink="/login" class="tab">
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.6" stroke="currentColor" stroke-width="2"/><path d="M5 20c0-3.4 3.1-6 7-6s7 2.6 7 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <span>Perfil</span>
+        </a>
+      }
     </nav>
 
     @if (panelOpen()) {
@@ -142,36 +147,80 @@ import { MicrosoftAuthService } from '../../services/microsoft-auth.service';
     `
     :host { display: contents; }
 
-    .bottom-nav {
+    .tabbar {
       position: fixed;
       bottom: 0; left: 0; right: 0;
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0.5rem 1rem;
-      padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
-      background: #fff; border-top: 1px solid #e0e0e0;
-      z-index: 1000; font-family: sans-serif;
+      background: var(--white);
+      border-top: 1px solid var(--line);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 9px 8px;
+      padding-bottom: max(9px, env(safe-area-inset-bottom));
+      z-index: 1000;
     }
 
-    .nav-items { display: flex; gap: 1.5rem; align-items: center; }
-
-    .nav-items a {
-      display: flex; flex-direction: column; align-items: center; gap: 2px;
-      text-decoration: none; color: #666; font-size: 0.7rem;
-      cursor: pointer; padding: 0.25rem 0.5rem; border-radius: 8px;
+    .tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      font-size: 9.5px;
+      font-weight: 700;
+      color: var(--faint);
+      cursor: pointer;
+      flex: 1;
+      transition: 0.15s;
+      text-decoration: none;
+      font-family: var(--body);
     }
 
-    .nav-items a.active { color: #007bff; }
-    .nav-items a .icon { font-size: 1.3rem; line-height: 1; }
-    .nav-items a .label { font-size: 0.65rem; }
-
-    .chat-bubble {
-      width: 48px; height: 48px; border-radius: 50%; border: none;
-      background: #007bff; color: #fff; font-size: 1.3rem;
-      cursor: pointer; display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 2px 12px rgba(0,123,255,0.4); flex-shrink: 0;
+    .tab svg {
+      width: 21px;
+      height: 21px;
     }
 
-    .chat-bubble:active { transform: scale(0.92); }
+    .tab.on { color: var(--green-deep); }
+
+    .fab {
+      position: relative;
+      top: -20px;
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      background: var(--white);
+      padding: 3px;
+      box-shadow: 0 14px 26px -10px rgba(16,69,132,.55);
+      cursor: pointer;
+      border: 0;
+      flex-shrink: 0;
+      transition: transform 0.16s;
+    }
+
+    .fab:hover { transform: translateY(-2px); }
+
+    .fab-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      border: 2px solid var(--accent);
+      background: var(--white);
+    }
+
+    .pulse {
+      position: absolute;
+      bottom: 3px;
+      right: 3px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--green-light);
+      border: 2px solid var(--white);
+    }
 
     .overlay {
       position: fixed; inset: 0; background: rgba(0,0,0,0.3);

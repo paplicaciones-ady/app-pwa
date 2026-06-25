@@ -1,1 +1,214 @@
-/* You can add global styles to this file, and also import other style files */
+:root {
+  --blue: #104584;
+  --blue-700: #0d3a70;
+  --blue-900: #0a2950;
+  --green: #3E9B61;
+  --green-light: #45A662;
+  --green-soft: #e9f4ed;
+  --green-deep: #2f7d4d;
+  --accent: #E11225;
+  --accent-deep: #B30E1C;
+  --accent-soft: #fdebed;
+  --accent-rgb: 225, 18, 37;
+  --yellow: #F2BA2A;
+  --orange: #F07F44;
+  --grey: #616160;
+  --ink: #15263b;
+  --muted: #768699;
+  --faint: #9aa7b8;
+  --line: #e9eef4;
+  --bg: #f3f7fb;
+  --white: #fff;
+  --display: 'Quicksand', system-ui, sans-serif;
+  --body: 'Manrope', system-ui, sans-serif;
+  --r: 22px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  font-family: var(--body);
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+input, select, textarea {
+  font-family: inherit;
+}
+
+/* Shared UI atoms */
+.field {
+  position: relative;
+  margin-bottom: 14px;
+}
+
+.field label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--muted);
+  margin: 0 0 7px 4px;
+  letter-spacing: 0.01em;
+}
+
+.inp {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--white);
+  border: 1.6px solid var(--line);
+  border-radius: 14px;
+  transition: 0.18s;
+  height: 50px;
+  padding: 0 14px;
+}
+
+.inp svg {
+  width: 19px;
+  height: 19px;
+  color: var(--faint);
+  flex: none;
+  transition: 0.18s;
+}
+
+.inp input,
+.inp select {
+  border: 0;
+  outline: 0;
+  background: transparent;
+  flex: 1;
+  font-family: var(--body);
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--ink);
+  padding: 0 10px;
+  width: 100%;
+}
+
+.inp input::placeholder,
+.inp select::placeholder {
+  color: var(--faint);
+  font-weight: 500;
+}
+
+.inp:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(var(--accent-rgb), 0.14);
+}
+
+.inp:focus-within svg {
+  color: var(--accent);
+}
+
+.btn {
+  width: 100%;
+  height: 52px;
+  border: 0;
+  border-radius: 15px;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 15.5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.12s, box-shadow 0.2s;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+  color: var(--white);
+  box-shadow: 0 12px 22px -10px rgba(var(--accent-rgb), 0.65);
+}
+
+.btn-primary:active {
+  transform: translateY(1px) scale(0.995);
+}
+
+.btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Toast notification */
+.toast-container {
+  position: fixed;
+  left: 50%;
+  bottom: 90px;
+  transform: translateX(-50%);
+  z-index: 2000;
+  pointer-events: none;
+}
+
+.toast {
+  background: var(--ink);
+  color: var(--white);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 11px 16px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 14px 30px -10px rgba(0, 0, 0, 0.5);
+  pointer-events: auto;
+  animation: toastIn 0.3s ease-out;
+}
+
+.toast svg {
+  width: 15px;
+  height: 15px;
+  color: var(--green-light);
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Error block */
+.error-msg {
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+  padding: 12px 16px;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  line-height: 1.4;
+  border: 1px solid rgba(var(--accent-rgb), 0.15);
+}
+
+/* Link style */
+.link-like {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-deep);
+  cursor: pointer;
+}

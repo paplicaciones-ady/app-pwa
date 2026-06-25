@@ -7,13 +7,48 @@ import { AuthService } from '../../services/auth.service';
   selector: 'app-auth-callback',
   standalone: true,
   template: `
-    <div class="container">
-      <p>{{ message }}</p>
+    <div class="auth-callback">
+      <div class="callback-card">
+        <div class="callback-spinner"></div>
+        <p>{{ message }}</p>
+      </div>
     </div>
   `,
   styles: `
-    .container { display: flex; justify-content: center; align-items: center; min-height: 50vh; font-family: sans-serif; }
-    p { font-size: 1.1rem; color: #555; }
+    :host { display: block; }
+    .auth-callback {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 80vh;
+      padding: 24px;
+    }
+    .callback-card {
+      background: var(--white);
+      border: 1.4px solid var(--line);
+      border-radius: 22px;
+      padding: 40px 32px;
+      text-align: center;
+      max-width: 320px;
+      width: 100%;
+      box-shadow: 0 8px 30px -12px rgba(0,0,0,.12);
+    }
+    .callback-spinner {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 3px solid var(--line);
+      border-top-color: var(--accent);
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 20px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    p {
+      font-family: var(--body);
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 600;
+    }
   `,
 })
 export class AuthCallback implements OnInit {

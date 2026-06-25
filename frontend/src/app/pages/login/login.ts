@@ -22,71 +22,261 @@ interface DeviceCheckResult {
   selector: 'app-login',
   standalone: true,
   template: `
-    <div class="container">
-      <h2>Iniciar sesión</h2>
-
-      @if (deviceStatus(); as d) {
-        <div class="device-status" [class.registered]="d.registered" [class.trusted]="d.isTrusted">
-          @if (d.registered) {
-            {{ d.isTrusted ? '✓ Confiado' : '✗ No confiado' }} · {{ d.deviceName }} · {{ d.userName ?? d.userEmail }}
-          } @else {
-            ✗ Dispositivo no registrado
+    <div class="s1">
+      <div class="s1-hero">
+        <div class="org-row">
+          <div class="org-chip">
+            <span class="org-dot"></span>
+            Elena 360
+          </div>
+          @if (!connectivity.isOnline()) {
+            <span class="offline-chip">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5a7 7 0 0 1 14 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17" r="1.6" fill="currentColor"/></svg>
+              Sin conexión
+            </span>
           }
         </div>
-      }
+        <div class="s1-date">
+          <span class="date-label">{{ today }}</span>
+        </div>
+      </div>
 
-      @if (error(); as e) {
-        <div class="error">{{ e }}</div>
-      }
+      <div class="s1-sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-scroll">
+          @if (deviceStatus(); as d) {
+            <div class="device-status" [class.registered]="d.registered" [class.trusted]="d.isTrusted">
+              @if (d.registered) {
+                {{ d.isTrusted ? '✓ Confiado' : '✗ No confiado' }} · {{ d.deviceName }} · {{ d.userName ?? d.userEmail }}
+              } @else {
+                ✗ Dispositivo no registrado
+              }
+            </div>
+          }
 
-      @switch (uiMode()) {
-        @case ('first-time-offline') {
-          <div class="offline-msg">Conéctate a internet para iniciar sesión por primera vez</div>
-        }
-        @case ('first-time-online') {
-          <button class="microsoft-btn" (click)="onMicrosoftLogin()" [disabled]="loading()">
-            Continuar con Microsoft
-          </button>
-        }
-        @case ('registered-offline') {
-          <button class="passkey-btn" (click)="onPasskeyByFingerprint()" [disabled]="loading()">
-            {{ loading() ? 'Entrando…' : 'Entrar con huella' }}
-          </button>
-        }
-        @case ('registered-online') {
-          <button class="passkey-btn passkey-big" (click)="onPasskeyByFingerprint()" [disabled]="loading()">
-            {{ loading() ? 'Entrando…' : 'Entrar con huella' }}
-          </button>
-          <a class="alt-link" (click)="onMicrosoftLogin()">Usar otra cuenta de Microsoft</a>
-        }
-      }
+          @if (error(); as e) {
+            <div class="error-msg">{{ e }}</div>
+          }
+
+          <h3 class="sheet-title">Iniciar sesión</h3>
+          <p class="sheet-lead">Accede con tu cuenta corporativa.</p>
+
+          @switch (uiMode()) {
+            @case ('first-time-offline') {
+              <div class="offline-msg">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5a7 7 0 0 1 14 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17" r="1.6" fill="currentColor"/></svg>
+                Conéctate a internet para iniciar sesión por primera vez
+              </div>
+            }
+            @case ('first-time-online') {
+              <button class="btn btn-primary" (click)="onMicrosoftLogin()" [disabled]="loading()">
+                <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="8" height="8" rx="1" fill="#fff"/><rect x="13" y="3" width="8" height="8" rx="1" fill="#fff"/><rect x="3" y="13" width="8" height="8" rx="1" fill="#fff"/><rect x="13" y="13" width="8" height="8" rx="1" fill="#fff"/></svg>
+                Continuar con Microsoft
+              </button>
+              <div class="s1-foot">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6l8-4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Conexión cifrada de extremo a extremo
+              </div>
+            }
+            @case ('registered-offline') {
+              <button class="btn btn-primary" (click)="onPasskeyByFingerprint()" [disabled]="loading()">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M12 4c-2.8 0-5 1.6-6 3.5M19 9c0-1.2-.5-2.4-1.3-3.4M5 11c0-1 .3-2 .8-2.8M4.5 16c.7-1.3 1-2.8 1-4.3M8 19c1-1.6 1.4-3.6 1.4-5.6 0-1.5 1-2.6 2.6-2.6s2.6 1.1 2.6 2.6c0 .9-.1 1.8-.3 2.6M11.8 13.4c0 3.2-.6 5.8-1.6 7.6M15 17.5c-.3 1-.7 2-1.2 2.9" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg>
+                {{ loading() ? 'Entrando…' : 'Entrar con huella' }}
+              </button>
+            }
+            @case ('registered-online') {
+              <button class="btn btn-primary" (click)="onPasskeyByFingerprint()" [disabled]="loading()" style="padding:18px;font-size:17px;">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M12 4c-2.8 0-5 1.6-6 3.5M19 9c0-1.2-.5-2.4-1.3-3.4M5 11c0-1 .3-2 .8-2.8M4.5 16c.7-1.3 1-2.8 1-4.3M8 19c1-1.6 1.4-3.6 1.4-5.6 0-1.5 1-2.6 2.6-2.6s2.6 1.1 2.6 2.6c0 .9-.1 1.8-.3 2.6M11.8 13.4c0 3.2-.6 5.8-1.6 7.6M15 17.5c-.3 1-.7 2-1.2 2.9" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg>
+                {{ loading() ? 'Entrando…' : 'Entrar con huella' }}
+              </button>
+              <div class="divider">o continúa con</div>
+              <div class="biometric">
+                <div class="bio-btn" (click)="onMicrosoftLogin()" title="Microsoft">
+                  <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="8" height="8" rx="1" fill="currentColor"/><rect x="13" y="3" width="8" height="8" rx="1" fill="currentColor"/><rect x="3" y="13" width="8" height="8" rx="1" fill="currentColor"/><rect x="13" y="13" width="8" height="8" rx="1" fill="currentColor"/></svg>
+                </div>
+              </div>
+            }
+          }
+        </div>
+      </div>
     </div>
   `,
   styles: `
-    .container { max-width: 360px; margin: 4rem auto; padding: 2rem; font-family: sans-serif; }
-    h2 { text-align: center; margin-bottom: 1.5rem; }
-    button { padding: 0.75rem; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer; width: 100%; }
-    button:disabled { opacity: 0.5; cursor: default; }
-    .microsoft-btn { background: #2f2f2f; color: #fff; font-weight: 600; }
-    .passkey-btn { background: #28a745; color: #fff; }
-    .passkey-big { padding: 1.2rem; font-size: 1.2rem; font-weight: 600; }
-    .alt-link { display: block; text-align: center; margin-top: 1rem; color: #007bff; cursor: pointer; text-decoration: underline; font-size: 0.9rem; }
-    .offline-msg { background: #f8d7da; color: #721c24; padding: 1rem; border-radius: 6px; text-align: center; font-size: 0.95rem; }
-    .error { background: #f8d7da; color: #721c24; padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.9rem; }
-    .device-status { padding: 0.5rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.85rem; text-align: center; background: #f8d7da; color: #721c24; }
-    .device-status.registered { background: #fff3cd; color: #856404; }
-    .device-status.trusted { background: #d4edda; color: #155724; }
+    :host { display: block; height: 100%; }
+    .s1 { display: flex; flex-direction: column; height: 100vh; }
+    .s1-hero {
+      position: relative;
+      background: linear-gradient(160deg, #1356a0, var(--blue) 55%, #0c3567);
+      padding: 16px 24px 42px;
+      overflow: hidden;
+      flex: none;
+    }
+    .org-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      z-index: 2;
+    }
+    .org-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--white);
+      padding: 5px 14px 5px 6px;
+      border-radius: 999px;
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--ink);
+      box-shadow: 0 6px 14px -8px rgba(0,0,0,.4);
+    }
+    .org-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--green));
+    }
+    .offline-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #bff0d2;
+      background: rgba(159,230,185,.16);
+      border: 1px solid rgba(159,230,185,.3);
+      padding: 5px 10px;
+      border-radius: 999px;
+    }
+    .offline-chip svg { width: 12px; height: 12px; }
+    .s1-date {
+      position: relative;
+      z-index: 2;
+      margin-top: 22px;
+    }
+    .date-label {
+      color: #bcd6f4;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .s1-sheet {
+      flex: 1;
+      background: var(--bg);
+      margin-top: -24px;
+      border-radius: 28px 28px 0 0;
+      padding: 26px 24px 20px;
+      position: relative;
+      z-index: 3;
+      display: flex;
+      flex-direction: column;
+    }
+    .sheet-scroll {
+      flex: 1;
+      overflow-y: auto;
+    }
+    .sheet-scroll::-webkit-scrollbar { width: 0; }
+    .sheet-handle {
+      width: 42px;
+      height: 5px;
+      border-radius: 99px;
+      background: var(--line);
+      margin: 0 auto 20px;
+    }
+    .sheet-title {
+      font-family: var(--display);
+      font-weight: 700;
+      color: var(--ink);
+      font-size: 18px;
+      margin-bottom: 2px;
+    }
+    .sheet-lead {
+      font-size: 12.5px;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+    .btn { margin-top: 8px; }
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--faint);
+      font-size: 11px;
+      font-weight: 600;
+      margin: 18px 2px;
+    }
+    .divider::before, .divider::after {
+      content: "";
+      height: 1px;
+      background: var(--line);
+      flex: 1;
+    }
+    .biometric { display: flex; justify-content: center; }
+    .bio-btn {
+      width: 54px;
+      height: 54px;
+      border-radius: 16px;
+      border: 1.6px solid var(--line);
+      background: var(--white);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+    .bio-btn:hover { border-color: var(--accent); background: var(--accent-soft); }
+    .bio-btn svg { width: 24px; height: 24px; color: var(--blue); }
+    .s1-foot {
+      text-align: center;
+      font-size: 10.5px;
+      color: var(--faint);
+      margin-top: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-weight: 600;
+    }
+    .s1-foot svg { width: 13px; height: 13px; opacity: 0.7; }
+    .device-status {
+      padding: 10px 14px;
+      border-radius: 14px;
+      margin-bottom: 16px;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid rgba(225,18,37,.15);
+    }
+    .device-status.registered { background: #fff3cd; color: #856404; border-color: rgba(242,186,42,.3); }
+    .device-status.trusted { background: #d4edda; color: #155724; border-color: rgba(62,155,97,.3); }
+    .offline-msg {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(225,18,37,.06);
+      color: var(--accent-deep);
+      padding: 14px 16px;
+      border-radius: 14px;
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.4;
+      border: 1px solid rgba(225,18,37,.12);
+    }
+    .offline-msg svg { width: 18px; height: 18px; flex-shrink: 0; }
   `,
 })
 export class Login {
-  private readonly authService = inject(AuthService);
+  protected readonly authService = inject(AuthService);
+  protected readonly connectivity = inject(ConnectivityService);
   private readonly passkeyService = inject(PasskeyService);
   private readonly fingerprintService = inject(FingerprintService);
   private readonly microsoftAuthService = inject(MicrosoftAuthService);
-  private readonly connectivity = inject(ConnectivityService);
   private readonly indexedDb = inject(IndexedDbService);
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
+
+  protected readonly today = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }).replace(/^\w/, c => c.toUpperCase());
 
   protected readonly error = signal<string | null>(null);
   protected readonly loading = signal(false);

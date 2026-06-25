@@ -67,57 +67,82 @@ interface ChatMessage {
 
     .chat-container {
       display: flex; flex-direction: column;
-      height: calc(100vh - 72px); /* leave room for bottom nav */
-      font-family: sans-serif;
+      height: calc(100vh - 130px); /* room for navbar + bottom nav */
+      font-family: var(--body);
     }
 
     .chat-header {
       display: flex; align-items: center; gap: 0.75rem;
-      padding: 0.75rem 1rem;
-      background: #007bff; color: #fff; font-weight: 600;
+      padding: 16px 20px;
+      background: linear-gradient(155deg, #1356a0, var(--blue) 60%, #0d3970);
+      color: #fff; font-weight: 600;
     }
 
     .back-btn {
-      color: #fff; text-decoration: none; font-size: 0.9rem; cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: rgba(255,255,255,.9);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.16);
+      cursor: pointer;
     }
+    .back-btn:hover { background: rgba(255,255,255,.2); }
 
-    .title { flex: 1; text-align: center; font-size: 1rem; }
+    .title { flex: 1; text-align: center; font-family: var(--display); font-size: 17px; }
 
     .new-chat-btn {
-      background: rgba(255,255,255,0.2); color: #fff; border: 1px solid rgba(255,255,255,0.4);
-      border-radius: 16px; padding: 0.3rem 0.8rem; font-size: 0.8rem; cursor: pointer;
+      background: rgba(255,255,255,.12);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
       white-space: nowrap;
     }
+    .new-chat-btn:hover { background: rgba(255,255,255,.2); }
     .new-chat-btn:disabled { opacity: 0.5; cursor: default; }
 
     .messages {
-      flex: 1; overflow-y: auto; padding: 1rem;
-      display: flex; flex-direction: column; gap: 0.75rem;
+      flex: 1; overflow-y: auto; padding: 16px 16px 8px;
+      display: flex; flex-direction: column; gap: 12px;
+      background: var(--bg);
     }
 
     .empty-state {
-      text-align: center; margin: auto; color: #999;
+      text-align: center; margin: auto; color: var(--muted);
     }
 
-    .empty-icon { font-size: 3rem; display: block; margin-bottom: 0.5rem; }
-    .hint { font-size: 0.85rem; color: #bbb; margin-top: 0.25rem; }
+    .empty-icon { font-size: 48px; display: block; margin-bottom: 12px; }
+    .hint { font-size: 12px; color: var(--faint); margin-top: 4px; }
 
     .message { display: flex; }
     .message.user { justify-content: flex-end; }
     .message.assistant { justify-content: flex-start; }
 
     .bubble {
-      max-width: 80%; padding: 0.6rem 1rem; border-radius: 16px;
-      font-size: 0.9rem; line-height: 1.4; word-break: break-word;
+      max-width: 80%; padding: 10px 16px; border-radius: 16px;
+      font-size: 13.5px; line-height: 1.45; word-break: break-word;
     }
 
     .message.user .bubble {
-      background: #007bff; color: #fff;
+      background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+      color: #fff;
       border-bottom-right-radius: 4px;
     }
 
     .message.assistant .bubble {
-      background: #f0f0f0; color: #333;
+      background: var(--white);
+      color: var(--ink);
+      border: 1px solid var(--line);
       border-bottom-left-radius: 4px;
       line-height: 1.6;
     }
@@ -125,28 +150,28 @@ interface ChatMessage {
     ::ng-deep .message.assistant .bubble p { margin: 0 0 0.5rem 0; }
     ::ng-deep .message.assistant .bubble p:last-child { margin-bottom: 0; }
     ::ng-deep .message.assistant .bubble code {
-      background: #e8e8e8; padding: 0.15rem 0.4rem; border-radius: 4px;
-      font-size: 0.85rem; font-family: 'Courier New', monospace;
+      background: #eef2f7; padding: 0.15rem 0.4rem; border-radius: 4px;
+      font-size: 12px; font-family: 'Courier New', monospace;
     }
     ::ng-deep .message.assistant .bubble pre {
-      background: #1e1e1e; color: #d4d4d4; padding: 0.8rem; border-radius: 8px;
-      overflow-x: auto; margin: 0.5rem 0;
+      background: #1e1e1e; color: #d4d4d4; padding: 12px; border-radius: 8px;
+      overflow-x: auto; margin: 8px 0;
     }
     ::ng-deep .message.assistant .bubble pre code {
-      background: transparent; padding: 0; color: inherit; font-size: 0.85rem;
+      background: transparent; padding: 0; color: inherit; font-size: 12px;
     }
     ::ng-deep .message.assistant .bubble ul,
     ::ng-deep .message.assistant .bubble ol {
       padding-left: 1.5rem; margin: 0.25rem 0;
     }
     ::ng-deep .message.assistant .bubble li { margin-bottom: 0.15rem; }
-    ::ng-deep .message.assistant .bubble a { color: #007bff; text-decoration: underline; }
+    ::ng-deep .message.assistant .bubble a { color: var(--accent); text-decoration: underline; }
     ::ng-deep .message.assistant .bubble strong { font-weight: 600; }
 
-    .typing { display: flex; gap: 4px; align-items: center; padding: 0.6rem 1.2rem; }
+    .typing { display: flex; gap: 4px; align-items: center; padding: 8px 16px; }
 
     .dot {
-      width: 8px; height: 8px; border-radius: 50%; background: #999;
+      width: 8px; height: 8px; border-radius: 50%; background: var(--faint);
       animation: bounce 1.4s infinite ease-in-out;
     }
 
@@ -159,21 +184,32 @@ interface ChatMessage {
     }
 
     .input-bar {
-      display: flex; gap: 0.5rem; padding: 0.75rem 1rem;
-      border-top: 1px solid #e0e0e0; background: #fff;
-      padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+      display: flex; gap: 8px; padding: 12px 16px;
+      border-top: 1px solid var(--line); background: var(--white);
+      padding-bottom: calc(12px + env(safe-area-inset-bottom));
     }
 
     .input-bar input {
-      flex: 1; padding: 0.6rem 1rem; border: 1px solid #ddd;
-      border-radius: 24px; font-size: 0.9rem; outline: none;
+      flex: 1; padding: 0 16px; border: 1.6px solid var(--line);
+      border-radius: 24px; font-size: 13.5px; outline: none;
+      font-family: var(--body); font-weight: 600; color: var(--ink);
+      height: 44px;
     }
 
-    .input-bar input:focus { border-color: #007bff; }
+    .input-bar input::placeholder { color: var(--faint); font-weight: 500; }
+    .input-bar input:focus { border-color: var(--accent); }
 
     .input-bar button {
-      padding: 0.6rem 1.2rem; border: none; border-radius: 24px;
-      background: #007bff; color: #fff; font-weight: 600; cursor: pointer;
+      height: 44px;
+      padding: 0 20px;
+      border: none;
+      border-radius: 24px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+      color: #fff;
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
     }
 
     .input-bar button:disabled { opacity: 0.5; cursor: default; }
