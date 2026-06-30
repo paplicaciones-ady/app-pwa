@@ -5,7 +5,7 @@ import { isPlatformBrowser } from '@angular/common';
 export class IndexedDbService {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly dbName = 'pwa-app';
-  private readonly version = 3;
+  private readonly version = 4;
 
   private dbPromise: Promise<IDBDatabase | null> | null = null;
 
@@ -29,6 +29,9 @@ export class IndexedDbService {
         }
         if (!db.objectStoreNames.contains('products')) {
           db.createObjectStore('products', { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains('chat')) {
+          db.createObjectStore('chat');
         }
       };
 
@@ -142,5 +145,31 @@ export class IndexedDbService {
 
   async removeDeviceCheck(): Promise<void> {
     return this.delete('auth', 'deviceCheck');
+  }
+
+  // ── Chat (cross-tab session persistence) ──────────────────────
+
+  async getChatSessionId(): Promise<string | null> {
+    return this.get<string>('chat', 'sessionId');
+  }
+
+  async setChatSessionId(id: string): Promise<void> {
+    return this.put('chat', id, 'sessionId');
+  }
+
+  async removeChatSessionId(): Promise<void> {
+    return this.delete('chat', 'sessionId');
+  }
+
+  async getChatMessages<T = any>(): Promise<T[]> {
+    return (await this.get<T[]>('chat', 'messages')) ?? [];
+  }
+
+  async setChatMessages<T = any>(messages: T[]): Promise<void> {
+    return this.put('chat', messages, 'messages');
+  }
+
+  async removeChatMessages(): Promise<void> {
+    return this.delete('chat', 'messages');
   }
 }

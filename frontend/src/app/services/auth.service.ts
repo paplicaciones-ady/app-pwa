@@ -27,6 +27,15 @@ export class AuthService {
   readonly isLoggedIn = computed(() => this.token() !== null);
   readonly tokenValue = this.token.asReadonly();
 
+  private _initResolve!: () => void;
+  readonly initComplete: Promise<void>;
+
+  constructor() {
+    this.initComplete = new Promise(resolve => {
+      this._initResolve = resolve;
+    });
+  }
+
   readonly microsoftSession = signal<User | null>(null);
   readonly localSession = signal(false);
   readonly authLevel = computed<'none' | 'local' | 'full'>(() => {
@@ -37,13 +46,19 @@ export class AuthService {
   readonly deviceFingerprint = signal<string | null>(null);
 
   async init() {
-    if (!isPlatformBrowser(this.platformId)) return;
+    if (!isPlatformBrowser(this.platformId)) {
+      this._initResolve();
+      return;
+    }
 
     const fp = await this.indexedDb.get<string>('auth', 'deviceUuid');
     if (fp) this.deviceFingerprint.set(fp);
 
     const stored = await this.indexedDb.getToken();
-    if (!stored) return;
+    if (!stored) {
+      this._initResolve();
+      return;
+    }
     this.token.set(stored);
 
     const method = await this.indexedDb.getAuthMethod();
@@ -61,6 +76,8 @@ export class AuthService {
         // Microsoft refresh failed, stay at local level
       }
     }
+
+    this._initResolve();
   }
 
   private async fetchUser(): Promise<User | null> {

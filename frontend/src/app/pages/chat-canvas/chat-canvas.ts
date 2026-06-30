@@ -5,6 +5,7 @@ import { lastValueFrom } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { MarkdownPipe } from '../../pipes/markdown.pipe';
 import { AuthService } from '../../services/auth.service';
+import { IndexedDbService } from '../../services/indexed-db.service';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -55,7 +56,6 @@ interface ChatMessage {
           [(ngModel)]="inputText"
           placeholder="Escribe un mensaje…"
           (keydown.enter)="send()"
-          [disabled]="loading()"
         />
         <button (click)="send()" [disabled]="!inputText().trim() || loading()">Enviar</button>
       </div>
@@ -219,15 +219,67 @@ interface ChatMessage {
 export class ChatCanvas {
   private readonly http = inject(HttpClient);
   protected readonly authService = inject(AuthService);
+  private readonly indexedDb = inject(IndexedDbService);
 
   protected readonly messages = signal<ChatMessage[]>([]);
   protected readonly inputText = signal('');
   protected readonly loading = signal(false);
   private readonly sessionId = signal<string | null>(null);
+  private readonly restoreDone = signal(false);
+  private readonly channel: BroadcastChannel | null =
+    typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('chat-sync') : null;
+
+  constructor() {
+    this.restoreOrInitSession();
+    this.channel?.addEventListener('message', (event) => {
+      if (event.data?.type === 'chat-update') {
+        if (event.data.messages) this.messages.set(event.data.messages);
+        if (event.data.sessionId !== undefined) this.sessionId.set(event.data.sessionId);
+      }
+    });
+  }
+
+  private async restoreOrInitSession() {
+    const sid = await this.indexedDb.getChatSessionId();
+    const msgs = await this.indexedDb.getChatMessages<ChatMessage>();
+
+    if (sid && msgs.length > 0) {
+      this.sessionId.set(sid);
+      this.messages.set(msgs);
+      this.restoreDone.set(true);
+      return;
+    }
+
+    await this.indexedDb.removeChatSessionId();
+    await this.indexedDb.removeChatMessages();
+    this.restoreDone.set(true);
+    this.initSession();
+  }
+
+  private async persistChat() {
+    await this.indexedDb.setChatMessages(this.messages());
+    this.channel?.postMessage({ type: 'chat-update', messages: this.messages(), sessionId: this.sessionId() });
+  }
+
+  private async initSession() {
+    try {
+      const res = await lastValueFrom(
+        this.http.post<{ sessionId: string; welcome: string }>('/api/copilot/session', {}),
+      );
+      this.sessionId.set(res.sessionId);
+      await this.indexedDb.setChatSessionId(res.sessionId);
+      if (res.welcome) {
+        this.messages.update((m) => [...m, { role: 'assistant', text: res.welcome }]);
+        await this.persistChat();
+      }
+    } catch {
+      // session creation will be retried on first send()
+    }
+  }
 
   protected async send() {
     const text = this.inputText().trim();
-    if (!text || this.loading()) return;
+    if (!text || this.loading() || !this.restoreDone()) return;
 
     this.messages.update((m) => [...m, { role: 'user', text }]);
     this.inputText.set('');
@@ -243,6 +295,7 @@ export class ChatCanvas {
         );
         sid = sessionRes.sessionId;
         this.sessionId.set(sid);
+        await this.indexedDb.setChatSessionId(sid);
         if (sessionRes.welcome) {
           this.messages.update((m) => [...m, { role: 'assistant', text: sessionRes.welcome }]);
         }
@@ -255,9 +308,18 @@ export class ChatCanvas {
         }),
       );
       this.messages.update((m) => [...m, { role: 'assistant', text: res.reply }]);
+
+      // Update sessionId if backend rotated it
+      if (res.sessionId && res.sessionId !== sid) {
+        this.sessionId.set(res.sessionId);
+        await this.indexedDb.setChatSessionId(res.sessionId);
+      }
+
+      await this.persistChat();
     } catch (err: any) {
       // If session expired / invalid, reset so next message retries fresh
       this.sessionId.set(null);
+      await this.indexedDb.removeChatSessionId();
       this.messages.update((m) => [
         ...m,
         { role: 'assistant', text: 'Error al conectar con Copilot Studio.' },
@@ -267,9 +329,12 @@ export class ChatCanvas {
     }
   }
 
-  protected newChat() {
+  protected async newChat() {
     if (this.loading()) return;
     this.sessionId.set(null);
     this.messages.set([]);
+    await this.indexedDb.removeChatSessionId();
+    await this.indexedDb.removeChatMessages();
+    this.channel?.postMessage({ type: 'chat-update', messages: [], sessionId: null });
   }
 }

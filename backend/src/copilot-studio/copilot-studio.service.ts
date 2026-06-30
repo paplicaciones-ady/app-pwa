@@ -33,7 +33,7 @@ export class CopilotStudioService implements OnModuleDestroy {
   private readonly environmentId: string;
   private readonly agentIdentifier: string;
   private readonly sessions = new Map<string, Session>();
-  private readonly SESSION_TTL = 15 * 60 * 1000;
+  private readonly SESSION_TTL = 60 * 60 * 1000;
   private cleanupTimer: ReturnType<typeof setInterval>;
   private readonly conversationLogger: ConversationLogger;
 

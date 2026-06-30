@@ -295,9 +295,16 @@ export class Login {
 
   constructor() {
     if (this.authService.isLoggedIn()) {
-      this.router.navigate(['/home']);
+      this.router.navigate(['/chat']);
       return;
     }
+
+    this.authService.initComplete.then(() => {
+      if (this.authService.isLoggedIn()) {
+        this.router.navigate(['/chat']);
+      }
+    });
+
     this.checkDevice();
   }
 
@@ -341,7 +348,7 @@ export class Login {
     try {
       const token = await this.passkeyService.loginPasskeyByFingerprint(fp);
       await this.authService.setSession(token, 'local');
-      this.router.navigate(['/home']);
+      this.router.navigate(['/chat']);
     } catch (err: any) {
       this.error.set(err.message ?? 'Error con la huella');
     } finally {

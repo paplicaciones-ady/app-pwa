@@ -23,9 +23,6 @@ const TYPE_LABELS: Record<string, string> = {
             PQRS · Elena 360
           </div>
           <div class="s2-icons">
-            <button class="ibtn" (click)="toggleForm()" title="Nueva PQRS">
-              <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>
-            </button>
             <div class="ibtn" (click)="requestGeoCity()" title="Ubicación (ciudad)">
               <svg viewBox="0 0 24 24" fill="none"><path d="M12 2a8 8 0 0 0-8 8c0 5 8 12 8 12s8-7 8-12a8 8 0 0 0-8-8Z" stroke="#fff" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="10" r="3" stroke="#fff" stroke-width="2"/></svg>
             </div>
@@ -44,6 +41,11 @@ const TYPE_LABELS: Record<string, string> = {
         @if (error(); as e) {
           <div class="error-msg">{{ e }}</div>
         }
+
+        <button class="add-pqrs-btn" (click)="toggleForm()">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+          Nueva PQRS
+        </button>
 
         @if (showForm()) {
           <div class="form-section">
@@ -334,6 +336,32 @@ const TYPE_LABELS: Record<string, string> = {
       height: 16px;
       color: var(--faint);
       pointer-events: none;
+    }
+    .add-pqrs-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      border: 1.6px dashed var(--line);
+      border-radius: 14px;
+      background: var(--white);
+      color: var(--accent);
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      transition: .15s;
+    }
+    .add-pqrs-btn:hover {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+    }
+    .add-pqrs-btn svg {
+      width: 18px;
+      height: 18px;
+      flex: none;
     }
     .s3-foot { display: flex; gap: 11px; }
     .btn-ghost {

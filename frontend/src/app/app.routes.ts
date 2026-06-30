@@ -14,5 +14,5 @@ export const routes: Routes = [
   { path: 'login', component: Login },
   { path: 'register', component: Register },
   { path: 'auth/callback', component: AuthCallback },
-  { path: '', redirectTo: '/home', pathMatch: 'full' },
+  { path: '', redirectTo: '/chat', pathMatch: 'full' },
 ];
