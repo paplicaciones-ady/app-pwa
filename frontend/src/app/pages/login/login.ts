@@ -14,6 +14,7 @@ interface DeviceCheckResult {
   deviceName?: string;
   isTrusted?: boolean;
   hasPasskeys?: boolean;
+  migrated?: boolean;
   userName?: string | null;
   userEmail?: string | null;
 }
@@ -303,9 +304,10 @@ export class Login {
   private async checkDevice() {
     try {
       const fingerprint = await this.fingerprintService.getFingerprint();
+      const legacy = await this.fingerprintService.getLegacyFingerprint();
       this.deviceFingerprint.set(fingerprint);
       const resp = await firstValueFrom(
-        this.http.post<DeviceCheckResult>('/api/devices/check', { fingerprint }),
+        this.http.post<DeviceCheckResult>('/api/devices/check', { fingerprint, legacyFingerprint: legacy }),
       );
       this.deviceStatus.set(resp);
       await this.indexedDb.setDeviceCheck(resp);

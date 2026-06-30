@@ -17,8 +17,22 @@ export class DevicesController {
   constructor(private readonly devicesService: DevicesService) {}
 
   @Post('check')
-  async checkFingerprint(@Body('fingerprint') fingerprint: string) {
-    const device = await this.devicesService.findByFingerprintPublic(fingerprint);
+  async checkFingerprint(
+    @Body('fingerprint') fingerprint: string,
+    @Body('legacyFingerprint') legacyFingerprint?: string,
+  ) {
+    let device = await this.devicesService.findByFingerprintPublic(fingerprint);
+    let migrated = false;
+
+    if (!device && legacyFingerprint) {
+      device = await this.devicesService.findByFingerprintPublic(legacyFingerprint);
+      if (device) {
+        await this.devicesService.updateFingerprint(device.id, fingerprint);
+        device.deviceFingerprint = fingerprint;
+        migrated = true;
+      }
+    }
+
     if (!device) return { registered: false };
     const userId = device.user?.id;
     const hasPasskeys = userId ? (await this.devicesService.getPasskeyCount(userId)) > 0 : false;
@@ -27,6 +41,7 @@ export class DevicesController {
       deviceName: device.deviceName,
       isTrusted: device.isTrusted,
       hasPasskeys,
+      migrated,
       userName: device.user?.name ?? null,
       userEmail: device.user?.email ?? null,
     };

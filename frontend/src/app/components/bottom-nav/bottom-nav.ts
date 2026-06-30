@@ -18,7 +18,7 @@ import { MicrosoftAuthService } from '../../services/microsoft-auth.service';
       </a>
 
       <button class="fab" (click)="onBubbleClick()">
-        <span class="fab-inner">💬</span>
+        <span class="fab-inner"><img src="/Elena-min.png" alt="Chat" class="fab-img" /></span>
         <span class="pulse"></span>
       </button>
 
@@ -209,6 +209,14 @@ import { MicrosoftAuthService } from '../../services/microsoft-auth.service';
       font-size: 22px;
       border: 2px solid var(--accent);
       background: var(--white);
+      overflow: hidden;
+    }
+
+    .fab-img {
+      width: 70%;
+      height: 70%;
+      object-fit: contain;
+      border-radius: 50%;
     }
 
     .pulse {

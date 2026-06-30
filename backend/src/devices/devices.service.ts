@@ -70,6 +70,10 @@ export class DevicesService {
     return this.deviceRepo.save(device);
   }
 
+  async updateFingerprint(id: number, fingerprint: string): Promise<void> {
+    await this.deviceRepo.update(id, { deviceFingerprint: fingerprint });
+  }
+
   async delete(id: number, userId: number): Promise<void> {
     const device = await this.deviceRepo.findOne({ where: { id, userId } });
     if (!device) throw new NotFoundException('Device not found');

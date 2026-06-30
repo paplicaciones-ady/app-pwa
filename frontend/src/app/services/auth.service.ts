@@ -38,6 +38,10 @@ export class AuthService {
 
   async init() {
     if (!isPlatformBrowser(this.platformId)) return;
+
+    const fp = await this.indexedDb.get<string>('auth', 'deviceUuid');
+    if (fp) this.deviceFingerprint.set(fp);
+
     const stored = await this.indexedDb.getToken();
     if (!stored) return;
     this.token.set(stored);
