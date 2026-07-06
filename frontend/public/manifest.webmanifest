@@ -1,6 +1,6 @@
 {
-  "name": "pwa-app",
-  "short_name": "pwa-app",
+  "name": "Elena 360",
+  "short_name": "Elena 360",
   "display": "standalone",
   "scope": "./",
   "start_url": "./",
@@ -32,6 +32,12 @@
     {
       "src": "icons/icon-152x152.png",
       "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icons/icon-180x180.png",
+      "sizes": "180x180",
       "type": "image/png",
       "purpose": "maskable any"
     },
