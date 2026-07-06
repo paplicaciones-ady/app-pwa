@@ -80,7 +80,7 @@ export class CopilotStudioController {
   @Post('chat')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  async chat(@Req() req: any, @Body() body: { message: string; sessionId?: string }) {
-    return this.copilotStudioService.sendMessage(req.user.id, body.message, body.sessionId);
+  async chat(@Req() req: any, @Body() body: { message?: string; sessionId?: string; value?: any }) {
+    return this.copilotStudioService.sendMessage(req.user.id, body.message ?? '', body.sessionId, body.value);
   }
 }

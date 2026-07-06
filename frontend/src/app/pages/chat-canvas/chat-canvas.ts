@@ -4,18 +4,20 @@ import { HttpClient } from '@angular/common/http';
 import { lastValueFrom } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { MarkdownPipe } from '../../pipes/markdown.pipe';
+import { AdaptiveCardComponent } from '../../components/adaptive-card/adaptive-card';
 import { AuthService } from '../../services/auth.service';
 import { IndexedDbService } from '../../services/indexed-db.service';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
   text: string;
+  card?: any;
 }
 
 @Component({
   selector: 'app-chat-canvas',
   standalone: true,
-  imports: [RouterLink, FormsModule, MarkdownPipe],
+  imports: [RouterLink, FormsModule, MarkdownPipe, AdaptiveCardComponent],
   template: `
     <div class="chat-container">
       <header class="chat-header">
@@ -35,7 +37,12 @@ interface ChatMessage {
         @for (msg of messages(); track $index) {
           <div class="message" [class.user]="msg.role === 'user'" [class.assistant]="msg.role === 'assistant'">
             @if (msg.role === 'assistant') {
-              <div class="bubble" [innerHTML]="msg.text | markdown"></div>
+              @if (msg.text) {
+                <div class="bubble" [innerHTML]="msg.text | markdown"></div>
+              }
+              @if (msg.card) {
+                <app-adaptive-card [cardJson]="msg.card" (submitCard)="handleCardSubmit($event)" />
+              }
             } @else {
               <div class="bubble">{{ msg.text }}</div>
             }
@@ -50,14 +57,23 @@ interface ChatMessage {
         }
       </div>
 
+      @if (suggestedActions(); as actions) {
+        <div class="suggested-bar">
+          @for (action of actions; track $index) {
+            <button class="suggested-action-btn" (click)="sendSuggested(action)">{{ action.title }}</button>
+          }
+        </div>
+      }
+
       <div class="input-bar">
         <input
           type="text"
           [(ngModel)]="inputText"
-          placeholder="Escribe un mensaje…"
+          [placeholder]="suggestedActions() ? 'Selecciona una opción…' : 'Escribe un mensaje…'"
           (keydown.enter)="send()"
+          [disabled]="loading() || !!suggestedActions()"
         />
-        <button (click)="send()" [disabled]="!inputText().trim() || loading()">Enviar</button>
+        <button (click)="send()" [disabled]="!inputText().trim() || loading() || !!suggestedActions()">Enviar</button>
       </div>
     </div>
   `,
@@ -168,6 +184,32 @@ interface ChatMessage {
     ::ng-deep .message.assistant .bubble a { color: var(--accent); text-decoration: underline; }
     ::ng-deep .message.assistant .bubble strong { font-weight: 600; }
 
+    .suggested-bar {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      padding: 12px 16px 0;
+      background: var(--white);
+      border-top: 1px solid var(--line);
+    }
+
+    .suggested-action-btn {
+      padding: 6px 16px;
+      border: 1.5px solid var(--accent);
+      border-radius: 999px;
+      background: transparent;
+      color: var(--accent);
+      font-size: 12.5px;
+      font-family: var(--body);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      line-height: 1.4;
+    }
+
+    .suggested-action-btn:hover {
+      background: var(--accent);
+      color: #fff;
+    }
+
     .typing { display: flex; gap: 4px; align-items: center; padding: 8px 16px; }
 
     .dot {
@@ -224,6 +266,7 @@ export class ChatCanvas {
   protected readonly messages = signal<ChatMessage[]>([]);
   protected readonly inputText = signal('');
   protected readonly loading = signal(false);
+  protected readonly suggestedActions = signal<{ title: string; value?: any }[] | null>(null);
   private readonly sessionId = signal<string | null>(null);
   private readonly restoreDone = signal(false);
   private readonly channel: BroadcastChannel | null =
@@ -264,12 +307,13 @@ export class ChatCanvas {
   private async initSession() {
     try {
       const res = await lastValueFrom(
-        this.http.post<{ sessionId: string; welcome: string }>('/api/copilot/session', {}),
+        this.http.post<{ sessionId: string; welcome: string; card?: any; suggestedActions?: { title: string; value?: any }[] }>('/api/copilot/session', {}),
       );
       this.sessionId.set(res.sessionId);
+      this.suggestedActions.set(res.suggestedActions ?? null);
       await this.indexedDb.setChatSessionId(res.sessionId);
       if (res.welcome) {
-        this.messages.update((m) => [...m, { role: 'assistant', text: res.welcome }]);
+        this.messages.update((m) => [...m, { role: 'assistant', text: res.welcome, card: res.card }]);
         await this.persistChat();
       }
     } catch {
@@ -279,7 +323,7 @@ export class ChatCanvas {
 
   protected async send() {
     const text = this.inputText().trim();
-    if (!text || this.loading() || !this.restoreDone()) return;
+    if (!text || this.loading() || !this.restoreDone() || !!this.suggestedActions()) return;
 
     this.messages.update((m) => [...m, { role: 'user', text }]);
     this.inputText.set('');
@@ -291,23 +335,25 @@ export class ChatCanvas {
       // Create session if none active
       if (!sid) {
         const sessionRes = await lastValueFrom(
-          this.http.post<{ sessionId: string; welcome: string }>('/api/copilot/session', {}),
+        this.http.post<{ sessionId: string; welcome: string; card?: any; suggestedActions?: { title: string; value?: any }[] }>('/api/copilot/session', {}),
         );
         sid = sessionRes.sessionId;
         this.sessionId.set(sid);
+        this.suggestedActions.set(sessionRes.suggestedActions ?? null);
         await this.indexedDb.setChatSessionId(sid);
         if (sessionRes.welcome) {
-          this.messages.update((m) => [...m, { role: 'assistant', text: sessionRes.welcome }]);
+          this.messages.update((m) => [...m, { role: 'assistant', text: sessionRes.welcome, card: sessionRes.card }]);
         }
       }
 
       const res = await lastValueFrom(
-        this.http.post<{ reply: string; sessionId: string }>('/api/copilot/chat', {
+        this.http.post<{ reply: string; sessionId: string; card?: any; suggestedActions?: { title: string; value?: any }[] }>('/api/copilot/chat', {
           message: text,
           sessionId: sid,
         }),
       );
-      this.messages.update((m) => [...m, { role: 'assistant', text: res.reply }]);
+      this.suggestedActions.set(res.suggestedActions ?? null);
+      this.messages.update((m) => [...m, { role: 'assistant', text: res.reply, card: res.card }]);
 
       // Update sessionId if backend rotated it
       if (res.sessionId && res.sessionId !== sid) {
@@ -318,6 +364,7 @@ export class ChatCanvas {
       await this.persistChat();
     } catch (err: any) {
       // If session expired / invalid, reset so next message retries fresh
+      this.suggestedActions.set(null);
       this.sessionId.set(null);
       await this.indexedDb.removeChatSessionId();
       this.messages.update((m) => [
@@ -331,10 +378,43 @@ export class ChatCanvas {
 
   protected async newChat() {
     if (this.loading()) return;
+    this.suggestedActions.set(null);
     this.sessionId.set(null);
     this.messages.set([]);
     await this.indexedDb.removeChatSessionId();
     await this.indexedDb.removeChatMessages();
     this.channel?.postMessage({ type: 'chat-update', messages: [], sessionId: null });
+  }
+
+  protected sendSuggested(action: { title: string; value?: any }) {
+    this.suggestedActions.set(null);
+    this.inputText.set(action.title);
+    this.send();
+  }
+
+  protected async handleCardSubmit(formData: any) {
+    if (this.loading() || !this.sessionId()) return;
+    this.loading.set(true);
+    try {
+      const sid = this.sessionId()!;
+      const res = await lastValueFrom(
+        this.http.post<{ reply: string; sessionId: string; card?: any; suggestedActions?: { title: string; value?: any }[] }>(
+          '/api/copilot/chat',
+          { value: formData, sessionId: sid },
+        ),
+      );
+      this.suggestedActions.set(res.suggestedActions ?? null);
+      this.messages.update((m) => [...m, { role: 'assistant', text: res.reply, card: res.card }]);
+      if (res.sessionId && res.sessionId !== sid) {
+        this.sessionId.set(res.sessionId);
+        await this.indexedDb.setChatSessionId(res.sessionId);
+      }
+      await this.persistChat();
+    } catch {
+      this.suggestedActions.set(null);
+      this.messages.update((m) => [...m, { role: 'assistant', text: 'Error al conectar con Copilot Studio.' }]);
+    } finally {
+      this.loading.set(false);
+    }
   }
 }
