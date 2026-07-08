@@ -6,6 +6,14 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Server,
   },
   {
+    path: 'services',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'pqrs',
+    renderMode: RenderMode.Server,
+  },
+  {
     path: 'profile',
     renderMode: RenderMode.Server,
   },

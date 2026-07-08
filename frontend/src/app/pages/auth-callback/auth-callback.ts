@@ -88,7 +88,7 @@ export class AuthCallback implements OnInit {
 
     console.log('[AuthCallback] Llamando setSession con token (primeros 50 chars):', token.slice(0, 50));
     this.authService.setSession(token, 'microsoft');
-    const destino = isNewUser ? '/profile' : '/chat';
+    const destino = isNewUser ? '/profile' : '/home';
     console.log('[AuthCallback] Redirigiendo a:', destino);
     this.router.navigate([destino]);
   }

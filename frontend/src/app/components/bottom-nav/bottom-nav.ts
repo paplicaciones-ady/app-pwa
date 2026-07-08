@@ -1,6 +1,6 @@
 import { Component, inject, signal, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { RouterLink, RouterLinkActive, Router } from '@angular/router';
+import { RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { lastValueFrom } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
@@ -17,10 +17,12 @@ import { MicrosoftAuthService } from '../../services/microsoft-auth.service';
         <span>Inicio</span>
       </a>
 
-      <button class="fab" (click)="onBubbleClick()">
-        <span class="fab-inner"><img src="/Elena-min.png" alt="Chat" class="fab-img" /></span>
-        <span class="pulse"></span>
-      </button>
+      @if (showFab()) {
+        <button class="fab" (click)="onBubbleClick()">
+          <span class="fab-inner"><img src="/Elena-min.png" alt="Chat" class="fab-img" /></span>
+          <span class="pulse"></span>
+        </button>
+      }
 
       @if (authService.isLoggedIn()) {
         <a routerLink="/profile" routerLinkActive="on" class="tab">
@@ -341,6 +343,9 @@ export class BottomNav {
     hasRefreshToken?: boolean;
   } | null>(null);
   protected readonly invalidating = signal(false);
+  protected readonly showFab = signal(false);
+
+  private readonly hiddenFabRoutes = new Set(['/login', '/services', '/home']);
 
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
@@ -355,6 +360,13 @@ export class BottomNav {
         });
       }
     }
+
+    this.showFab.set(!this.hiddenFabRoutes.has(this.router.url));
+    this.router.events.subscribe(e => {
+      if (e instanceof NavigationEnd) {
+        this.showFab.set(!this.hiddenFabRoutes.has(e.url));
+      }
+    });
   }
 
   onBubbleClick() {
