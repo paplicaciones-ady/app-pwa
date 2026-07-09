@@ -20,7 +20,9 @@ import { AuthService } from '../../services/auth.service';
         <div class="greet">
           <div class="welcome">
             <div class="elena-ava">
-              <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" fill="rgba(255,255,255,.18)" stroke="#fff" stroke-width="1.2"/><circle cx="12" cy="10" r="3.4" stroke="#fff" stroke-width="1.8"/><path d="M5 20c0-3.4 3.1-6 7-6s7 2.6 7 6" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg>
+              <button class="chat-mini" (click)="openChat()">
+                <img src="/Elena-min.png" alt="Chat">
+              </button>
             </div>
             <div>
               <h2>Hola, {{ userName() }} <span class="wave">👋</span></h2>
@@ -126,6 +128,17 @@ import { AuthService } from '../../services/auth.service';
     }
     .cback:hover { background: rgba(255,255,255,.24); }
     .cback svg { width: 20px; height: 20px; color: #fff; }
+    .chat-mini {
+      width: 50px; height: 50px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.95);
+      border: 0;
+      display: grid; place-items: center;
+      cursor: pointer; flex: none;
+      margin-left: auto; align-self: center;
+      box-shadow: 0 4px 10px -6px rgba(0,0,0,.4);
+    }
+    .chat-mini img { width: 44px; height: 44px; border-radius: 50%; }
     .org-chip {
       display: inline-flex;
       align-items: center;
@@ -382,5 +395,9 @@ export class Services {
 
   protected goToPqrs() {
     this.router.navigate(['/pqrs']);
+  }
+
+  protected openChat() {
+    this.router.navigate(['/chat']);
   }
 }

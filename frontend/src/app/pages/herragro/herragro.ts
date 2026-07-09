@@ -26,11 +26,13 @@ interface Module {
         <div class="greet">
           <div class="welcome">
             <div class="brand-ava">
-              <svg viewBox="0 0 24 24" fill="none"><path d="M9 4a3 3 0 0 0-3 3 3 3 0 0 0-1 5.8A3 3 0 0 0 9 18a3 3 0 0 0 3-1V5a3 3 0 0 0-3-1Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M15 4a3 3 0 0 1 3 3 3 3 0 0 1 1 5.8A3 3 0 0 1 15 18a3 3 0 0 1-3-1" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+              <button class="chat-mini" (click)="openChat()">
+                <img src="/Elena-min.png" alt="Chat">
+              </button>
             </div>
             <div>
               <h2>Hola, {{ userName() }} <span class="wave">👋</span></h2>
-              <p class="brand-sub">Estás en Herragro · Gestión Comercial</p>
+              <p class="brand-sub">Soy Elena. ¿Con qué área te ayudo?</p>
             </div>
           </div>
         </div>
@@ -117,6 +119,17 @@ interface Module {
     }
     .cback:hover { background: rgba(255,255,255,.24); }
     .cback svg { width: 20px; height: 20px; color: #fff; }
+    .chat-mini {
+      width: 50px; height: 50px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.95);
+      border: 0;
+      display: grid; place-items: center;
+      cursor: pointer; flex: none;
+      margin-left: auto; align-self: center;
+      box-shadow: 0 4px 10px -6px rgba(0,0,0,.4);
+    }
+    .chat-mini img { width: 44px; height: 44px; border-radius: 50%; }
     .org-chip {
       display: inline-flex; align-items: center; gap: 8px;
       background: rgba(255,255,255,.95);
@@ -274,5 +287,9 @@ export class Herragro {
   protected goModule(mod: Module) {
     if (!mod.implemented) return;
     this.router.navigate([`/herragro/${mod.id}`]);
+  }
+
+  protected openChat() {
+    this.router.navigate(['/chat']);
   }
 }
