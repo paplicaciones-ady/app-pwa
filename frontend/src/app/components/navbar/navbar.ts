@@ -1,21 +1,32 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, computed } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { ConnectivityService } from '../../services/connectivity.service';
+import { CompanyService } from '../../services/company.service';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
   imports: [RouterLink, RouterLinkActive],
   template: `
-    <nav class="navbar">
+    <nav class="navbar" [style.background]="bgGradient()">
       <div class="navbar-inner">
-        <a routerLink="/home" class="brand">
-          Elena <span class="brand-highlight">360</span>
-          <span class="status-dot" [class.online]="connectivity.isOnline()" [class.offline]="!connectivity.isOnline()">
-            {{ connectivity.isOnline() ? 'En línea' : 'Sin conexión' }}
-          </span>
-        </a>
+        @if (companyService.currentCompany(); as c) {
+          <a [routerLink]="c.homeRoute" class="brand company-brand">
+            <img [src]="c.logoUrl" [alt]="c.name" class="brand-logo">
+            <span>{{ c.name }}</span>
+            <span class="status-dot" [class.online]="connectivity.isOnline()" [class.offline]="!connectivity.isOnline()">
+              {{ connectivity.isOnline() ? 'En línea' : 'Sin conexión' }}
+            </span>
+          </a>
+        } @else {
+          <a routerLink="/home" class="brand">
+            Elena <span class="brand-highlight">360</span>
+            <span class="status-dot" [class.online]="connectivity.isOnline()" [class.offline]="!connectivity.isOnline()">
+              {{ connectivity.isOnline() ? 'En línea' : 'Sin conexión' }}
+            </span>
+          </a>
+        }
         <div class="nav-links">
           @if (authService.isLoggedIn()) {
             <button class="ibtn" title="Notificaciones">
@@ -58,6 +69,8 @@ import { ConnectivityService } from '../../services/connectivity.service';
       text-decoration: none;
     }
     .brand-highlight { color: #7fd79d; font-weight: 700; }
+    .company-brand { font-size: 16px; gap: 8px; }
+    .brand-logo { height: 22px; width: auto; }
     .status-dot {
       font-family: var(--body);
       font-size: 9.5px;
@@ -100,4 +113,10 @@ import { ConnectivityService } from '../../services/connectivity.service';
 export class Navbar {
   protected readonly authService = inject(AuthService);
   protected readonly connectivity = inject(ConnectivityService);
+  protected readonly companyService = inject(CompanyService);
+
+  protected readonly bgGradient = computed(() => {
+    const c = this.companyService.currentCompany();
+    return c ? c.brandGradient : 'linear-gradient(155deg, #1356a0, var(--blue) 60%, #0d3970)';
+  });
 }

@@ -345,7 +345,7 @@ export class BottomNav {
   protected readonly invalidating = signal(false);
   protected readonly showFab = signal(false);
 
-  private readonly hiddenFabRoutes = new Set(['/login', '/services', '/home']);
+  private readonly hiddenFabRoutes = new Set(['/login', '/services', '/home', '/herragro/chat']);
 
   constructor() {
     if (isPlatformBrowser(this.platformId)) {

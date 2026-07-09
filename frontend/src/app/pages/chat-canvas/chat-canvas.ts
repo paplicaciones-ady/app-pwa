@@ -1,5 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Location } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { lastValueFrom } from 'rxjs';
 import { FormsModule } from '@angular/forms';
@@ -17,11 +17,11 @@ interface ChatMessage {
 @Component({
   selector: 'app-chat-canvas',
   standalone: true,
-  imports: [RouterLink, FormsModule, MarkdownPipe, AdaptiveCardComponent],
+  imports: [FormsModule, MarkdownPipe, AdaptiveCardComponent],
   template: `
     <div class="chat-container">
       <header class="chat-header">
-        <a routerLink="/home" class="back-btn">← Volver</a>
+        <button (click)="goBack()" class="back-btn">← Volver</button>
         <span class="title">Copilot Studio</span>
         <button class="new-chat-btn" (click)="newChat()" [disabled]="loading()">+ Nueva</button>
       </header>
@@ -260,6 +260,7 @@ interface ChatMessage {
 })
 export class ChatCanvas {
   private readonly http = inject(HttpClient);
+  private readonly location = inject(Location);
   protected readonly authService = inject(AuthService);
   private readonly indexedDb = inject(IndexedDbService);
 
@@ -390,6 +391,10 @@ export class ChatCanvas {
     this.suggestedActions.set(null);
     this.inputText.set(action.title);
     this.send();
+  }
+
+  protected goBack() {
+    this.location.back();
   }
 
   protected async handleCardSubmit(formData: any) {

@@ -6,6 +6,58 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Server,
   },
   {
+    path: 'herragro',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'herragro/cliente',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'herragro/encuestas',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'herragro/cartera',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'herragro/crear',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'herragro/descuentos',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'herragro/quejas',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'herragro/precios',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'herragro/nuevos',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'herragro/gastos',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'herragro/rutero',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'herragro/brain',
+    renderMode: RenderMode.Server,
+  },
+  {
+    path: 'herragro/chat',
+    renderMode: RenderMode.Server,
+  },
+  {
     path: 'services',
     renderMode: RenderMode.Server,
   },
