@@ -12,6 +12,7 @@ interface ChatMessage {
   role: 'user' | 'assistant';
   text: string;
   card?: any;
+  oauthCard?: any;
 }
 
 @Component({
@@ -42,6 +43,12 @@ interface ChatMessage {
               }
               @if (msg.card) {
                 <app-adaptive-card [cardJson]="msg.card" (submitCard)="handleCardSubmit($event)" />
+              }
+              @if (msg.oauthCard) {
+                <div class="oauth-card">
+                  <p class="oauth-text">{{ msg.oauthCard.text }}</p>
+                  <button class="oauth-btn" (click)="openSignIn(msg.oauthCard)">Iniciar sesión</button>
+                </div>
               }
             } @else {
               <div class="bubble">{{ msg.text }}</div>
@@ -183,6 +190,38 @@ interface ChatMessage {
     ::ng-deep .message.assistant .bubble li { margin-bottom: 0.15rem; }
     ::ng-deep .message.assistant .bubble a { color: var(--accent); text-decoration: underline; }
     ::ng-deep .message.assistant .bubble strong { font-weight: 600; }
+
+    .oauth-card {
+      background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+      border: 1.5px solid #90caf9;
+      border-radius: 12px;
+      padding: 14px 18px;
+      margin: 6px 0;
+      text-align: center;
+      max-width: 80%;
+    }
+    .oauth-text {
+      margin: 0 0 10px 0;
+      font-size: 13px;
+      color: #1565c0;
+      font-weight: 500;
+    }
+    .oauth-btn {
+      background: linear-gradient(135deg, #1976d2, #1565c0);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 20px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .oauth-btn:hover {
+      background: linear-gradient(135deg, #1565c0, #0d47a1);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(25, 118, 210, 0.3);
+    }
 
     .suggested-bar {
       display: flex; flex-wrap: wrap; gap: 8px;
@@ -348,13 +387,13 @@ export class ChatCanvas {
       }
 
       const res = await lastValueFrom(
-        this.http.post<{ reply: string; sessionId: string; card?: any; suggestedActions?: { title: string; value?: any }[] }>('/api/copilot/chat', {
+        this.http.post<{ reply: string; sessionId: string; card?: any; oauthCard?: any; suggestedActions?: { title: string; value?: any }[] }>('/api/copilot/chat', {
           message: text,
           sessionId: sid,
         }),
       );
       this.suggestedActions.set(res.suggestedActions ?? null);
-      this.messages.update((m) => [...m, { role: 'assistant', text: res.reply, card: res.card }]);
+      this.messages.update((m) => [...m, { role: 'assistant', text: res.reply, card: res.card, oauthCard: res.oauthCard }]);
 
       // Update sessionId if backend rotated it
       if (res.sessionId && res.sessionId !== sid) {
@@ -395,6 +434,13 @@ export class ChatCanvas {
 
   protected goBack() {
     this.location.back();
+  }
+
+  protected openSignIn(oauthCard: any): void {
+    const signInUrl = oauthCard?.buttons?.[0]?.value;
+    if (signInUrl) {
+      window.open(signInUrl, '_blank');
+    }
   }
 
   protected async handleCardSubmit(formData: any) {

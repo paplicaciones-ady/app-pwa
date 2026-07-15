@@ -273,6 +273,17 @@ export class MicrosoftAuthService {
     }
 
     const decoded = jwt.decode(data.access_token) as Record<string, any> | null;
+    console.log('[Microsoft Service] getPowerPlatformToken response:', {
+      status: res.status,
+      hasAccessToken: !!data.access_token,
+      hasRefreshToken: !!data.refresh_token,
+      expiresIn: (data as any).expires_in,
+      tokenAudience: decoded?.aud,
+      tokenScope: decoded?.scp,
+      tokenOid: decoded?.oid,
+      tokenUpn: decoded?.upn,
+      tokenIss: decoded?.iss,
+    });
 
     return {
       token: data.access_token,

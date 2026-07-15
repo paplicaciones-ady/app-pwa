@@ -4,6 +4,7 @@ import { CopilotStudioClient, ConnectionSettings, getCopilotStudioSubscribeUrl }
 import { Activity, ActivityTypes } from '@microsoft/agents-activity';
 import { MicrosoftAuthService } from '../microsoft-auth/microsoft-auth.service';
 import { appLogger } from '../utils/app-logger';
+import * as jwt from 'jsonwebtoken';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
@@ -19,10 +20,12 @@ interface CollectResult {
   streamingText: string;
   consentCard: boolean;
   consentActionData: unknown;
+  consentCardText: string;
   connectionManagerCard: boolean;
   connectionCardText: string;
   adaptiveCard: any | null;
   suggestedActions: { title: string; value?: any }[] | null;
+  oauthCard: any | null;
 }
 
 interface SubmitAction {
@@ -58,6 +61,20 @@ export class CopilotStudioService implements OnModuleDestroy {
     clearInterval(this.cleanupTimer);
   }
 
+  private applyIdentity(activity: Activity, tokenOid: string | null, tokenUpn: string | null): void {
+    if (!tokenOid || !tokenUpn) return;
+    activity.from = {
+      id: tokenUpn,
+      name: tokenUpn,
+      aadObjectId: tokenOid,
+      role: 'user',
+    };
+    activity.recipient = {
+      id: this.agentIdentifier,
+      role: 'bot',
+    };
+  }
+
   async sendMessage(
     userId: number,
     text: string,
@@ -72,6 +89,17 @@ export class CopilotStudioService implements OnModuleDestroy {
       throw new UnauthorizedException('No hay sesión de Microsoft activa');
     }
     appLogger.log('CopilotStudio', 'sendMessage', 'PP token obtenido', { userId, oid: ppToken.tokenOid, upn: ppToken.tokenUpn });
+
+    const decodedToken = jwt.decode(ppToken.token) as Record<string, any> | null;
+    appLogger.log('CopilotStudio', 'sendMessage', 'PP Token claims', {
+      aud: decodedToken?.aud,
+      scp: decodedToken?.scp,
+      oid: decodedToken?.oid,
+      upn: decodedToken?.upn,
+      iss: decodedToken?.iss,
+      exp: decodedToken?.exp ? new Date(decodedToken.exp * 1000).toISOString() : null,
+      nbf: decodedToken?.nbf ? new Date(decodedToken.nbf * 1000).toISOString() : null,
+    });
 
     let session = sessionId ? this.sessions.get(sessionId) : undefined;
     if (!session) {
@@ -98,6 +126,11 @@ export class CopilotStudioService implements OnModuleDestroy {
 
     convLog.log('sendMessage', 'Creando CopilotStudioClient fresco para el mensaje');
     const settings = { environmentId: this.environmentId, agentIdentifier: this.agentIdentifier, useExperimentalEndpoint: true } as ConnectionSettings;
+    convLog.log('sendMessage', 'ConnectionSettings', {
+      environmentId: this.environmentId,
+      agentIdentifier: this.agentIdentifier,
+      useExperimentalEndpoint: true,
+    });
     const client = new CopilotStudioClient(settings, ppToken.token);
 
     const activity = new Activity('message');
@@ -107,17 +140,36 @@ export class CopilotStudioService implements OnModuleDestroy {
       activity.text = text;
     }
     activity.conversation = { id: session.conversationId };
+    this.applyIdentity(activity, ppToken.tokenOid, ppToken.tokenUpn);
 
-    convLog.log('sendMessage', 'Enviando actividad con executeStreaming', {
-      textPreview: text.slice(0, 100),
-      hasValue: value !== undefined,
-      conversationId: session.conversationId,
+    convLog.log('sendMessage', 'Activity completa a enviar', {
+      type: activity.type,
+      textPreview: activity.text ? activity.text.slice(0, 200) : null,
+      from: activity.from ?? null,
+      recipient: activity.recipient ?? null,
+      conversation: activity.conversation,
+      hasValue: activity.value !== undefined,
+      hasAttachments: !!activity.attachments?.length,
     });
 
-    let { text: replyText, hasPlanEvents, streamingText, consentCard, consentActionData, connectionManagerCard, connectionCardText, adaptiveCard, suggestedActions } = await this.collectReplies(
-      client.executeStreaming(activity, session.conversationId),
-      convLog,
-    );
+    let replyResult;
+    try {
+      replyResult = await this.collectReplies(
+        client.executeStreaming(activity, session.conversationId),
+        convLog,
+      );
+    } catch (err: any) {
+      convLog.log('sendMessage', 'ERROR en executeStreaming', {
+        message: err.message,
+        status: err.status,
+        statusText: err.statusText,
+        url: err.url,
+        body: typeof err.body === 'string' ? err.body.slice(0, 500) : null,
+      });
+      throw err;
+    }
+
+    let { text: replyText, hasPlanEvents, streamingText, consentCard, consentActionData, consentCardText, connectionManagerCard, connectionCardText, adaptiveCard, suggestedActions, oauthCard } = replyResult;
 
     let finalText = streamingText || replyText || '';
 
@@ -139,6 +191,7 @@ export class CopilotStudioService implements OnModuleDestroy {
             activity2.text = text;
           }
           activity2.conversation = { id: session.conversationId };
+          this.applyIdentity(activity2, ppToken.tokenOid, ppToken.tokenUpn);
           const retry = await this.collectReplies(
             client.executeStreaming(activity2, session.conversationId),
             convLog,
@@ -149,7 +202,13 @@ export class CopilotStudioService implements OnModuleDestroy {
           }
           convLog.log('sendMessage', 'Re-ask completado', { replyPreview: finalText.slice(0, 200), hasCard: !!retry.adaptiveCard });
         } catch (err: any) {
-          convLog.log('sendMessage', 'Re-ask falló', { error: err.message });
+          convLog.log('sendMessage', 'Re-ask falló', {
+            message: err.message,
+            status: err.status,
+            statusText: err.statusText,
+            url: err.url,
+            body: typeof err.body === 'string' ? err.body.slice(0, 500) : null,
+          });
         }
       }
     }
@@ -157,8 +216,20 @@ export class CopilotStudioService implements OnModuleDestroy {
     if (!finalText && consentCard) {
       convLog.log('sendMessage', 'Consent card detectada, enviando auto-consent Allow');
       const consentActivity = new Activity(ActivityTypes.Message);
-      consentActivity.value = consentActionData ?? { action: 'Allow', id: 'submit', shouldAwaitUserInput: true };
+
+      const isConnectorConsent = consentCardText.includes('Conectar para continuar');
+      if (isConnectorConsent) {
+        consentActivity.value = { action: 'Allow', id: 'submit', shouldAwaitUserInput: true };
+      } else {
+        consentActivity.value = consentActionData ?? { action: 'Allow', id: 'submit', shouldAwaitUserInput: true };
+      }
+      convLog.log('sendMessage', 'Consent value seleccionado', {
+        isConnectorConsent,
+        consentActionData,
+        consentCardText,
+      });
       consentActivity.conversation = { id: session.conversationId };
+      this.applyIdentity(consentActivity, ppToken.tokenOid, ppToken.tokenUpn);
 
       try {
         const consentResponse = await client.executeWithResponse(consentActivity, session.conversationId);
@@ -177,6 +248,7 @@ export class CopilotStudioService implements OnModuleDestroy {
             activity3.text = text;
           }
           activity3.conversation = { id: session.conversationId };
+          this.applyIdentity(activity3, ppToken.tokenOid, ppToken.tokenUpn);
           const retry = await this.collectReplies(
             client.executeStreaming(activity3, session.conversationId),
             convLog,
@@ -217,12 +289,18 @@ export class CopilotStudioService implements OnModuleDestroy {
       reply: finalText,
       sessionId: session.conversationId,
       ...(adaptiveCard ? { card: adaptiveCard } : {}),
+      ...(oauthCard ? { oauthCard } : {}),
       ...(suggestedActions?.length ? { suggestedActions } : {}),
     };
   }
 
   private async createSession(token: string, userId: number): Promise<Session> {
     appLogger.log('CopilotStudio', 'createSession', 'Iniciando conversación con Copilot Studio', { userId });
+    appLogger.log('CopilotStudio', 'createSession', 'ConnectionSettings', {
+      environmentId: this.environmentId,
+      agentIdentifier: this.agentIdentifier,
+      useExperimentalEndpoint: true,
+    });
     const client = new CopilotStudioClient(
       { environmentId: this.environmentId, agentIdentifier: this.agentIdentifier, useExperimentalEndpoint: true } as ConnectionSettings,
       token,
@@ -248,6 +326,16 @@ export class CopilotStudioService implements OnModuleDestroy {
       throw new UnauthorizedException('No hay sesión de Microsoft activa');
     }
     appLogger.log('CopilotStudio', 'createNewSession', 'PP token obtenido', { userId, oid: ppToken.tokenOid, upn: ppToken.tokenUpn });
+
+    const decodedToken = jwt.decode(ppToken.token) as Record<string, any> | null;
+    appLogger.log('CopilotStudio', 'createNewSession', 'PP Token claims', {
+      aud: decodedToken?.aud,
+      scp: decodedToken?.scp,
+      oid: decodedToken?.oid,
+      upn: decodedToken?.upn,
+      iss: decodedToken?.iss,
+      exp: decodedToken?.exp ? new Date(decodedToken.exp * 1000).toISOString() : null,
+    });
 
     const client = new CopilotStudioClient(
       { environmentId: this.environmentId, agentIdentifier: this.agentIdentifier, useExperimentalEndpoint: true } as ConnectionSettings,
@@ -290,10 +378,12 @@ export class CopilotStudioService implements OnModuleDestroy {
     let hasPlanEvents = false;
     let consentCard = false;
     let consentActionData: unknown = undefined;
+    let consentCardText = '';
     let connectionManagerCard = false;
     let connectionCardText = '';
     let adaptiveCard: any = null;
     let suggestedActions: { title: string; value?: any }[] | null = null;
+    let oauthCard: any = null;
     let activityCount = 0;
 
     for await (const activity of iterable) {
@@ -312,7 +402,27 @@ export class CopilotStudioService implements OnModuleDestroy {
         conversationId: activity.conversation?.id ?? null,
         streamingTyping: isStreamingTyping || undefined,
         timestamp: activity.timestamp ?? null,
+        attachments: activity.attachments?.map(a => ({
+          contentType: a.contentType,
+          contentPreview: a.content ? JSON.stringify(a.content).slice(0, 300) : null,
+        })) ?? null,
+        channelData: activity.channelData ?? null,
+        suggestedActionsDetail: activity.suggestedActions?.actions?.map(a => ({
+          type: a.type, title: a.title, value: a.value, text: a.text,
+        })) ?? null,
+        from: activity.from ?? null,
+        recipient: activity.recipient ?? null,
       });
+
+      const authKeywords = ['signIn', 'signin', 'oauth', 'tokenExchange', 'token_exchange', 'auth'];
+      const nameLower = (activity.name ?? '').toLowerCase();
+      if (authKeywords.some(k => nameLower.includes(k.toLowerCase()))) {
+        convLog.log('collectReplies', `Actividad #${activityCount} POSSIBLE AUTH ACTIVITY`, {
+          type: activity.type,
+          name: activity.name,
+          fullActivity: JSON.stringify(activity).slice(0, 1000),
+        });
+      }
 
       if (activity.type === ActivityTypes.EndOfConversation) {
         convLog.log('collectReplies', 'Fin de conversación (EndOfConversation)', {
@@ -349,6 +459,11 @@ export class CopilotStudioService implements OnModuleDestroy {
         consentCard = true;
         const card = activity.attachments?.[0]?.content as any;
         if (card) {
+          const bodyTexts = (card.body ?? [])
+            .filter((b: any) => b.type === 'TextBlock' && b.text)
+            .map((b: any) => b.text as string);
+          consentCardText = bodyTexts.join(' ');
+
           const submitActions = findSubmitActions(card);
           const allowAction = submitActions.find(
             a => a.title === 'Allow' || a.title === 'Permitir',
@@ -359,6 +474,8 @@ export class CopilotStudioService implements OnModuleDestroy {
         }
         convLog.log('collectReplies', 'Consent card detectada', {
           hasActionData: !!consentActionData,
+          consentActionData,
+          consentCardText,
         });
       }
 
@@ -380,6 +497,14 @@ export class CopilotStudioService implements OnModuleDestroy {
             convLog.log('collectReplies', 'Adaptive Card detectada', {
               hasBody: !!adaptiveCard?.body,
               bodyLength: adaptiveCard?.body?.length ?? 0,
+            });
+          }
+          if (att.contentType === 'application/vnd.microsoft.card.oauth') {
+            oauthCard = att.content as any;
+            convLog.log('collectReplies', 'OAuthCard detectada', {
+              text: oauthCard?.text,
+              connectionName: oauthCard?.connectionName,
+              hasSignInUrl: !!(oauthCard as any)?.buttons?.[0]?.value,
             });
           }
         }
@@ -415,7 +540,7 @@ export class CopilotStudioService implements OnModuleDestroy {
       hasSuggestedActions: !!suggestedActions?.length,
     });
 
-    return { text, hasPlanEvents, streamingText, consentCard, consentActionData, connectionManagerCard, connectionCardText, adaptiveCard, suggestedActions };
+    return { text, hasPlanEvents, streamingText, consentCard, consentActionData, consentCardText, connectionManagerCard, connectionCardText, adaptiveCard, suggestedActions, oauthCard };
   }
 
   private async subscribeForReply(
@@ -443,7 +568,7 @@ export class CopilotStudioService implements OnModuleDestroy {
     };
 
     const timeout = new Promise<string | null>((_, reject) =>
-      setTimeout(() => reject(new Error('Subscribe timeout 120s')), 120_000),
+      setTimeout(() => reject(new Error('Subscribe timeout 300s')), 300_000),
     );
 
     try {
