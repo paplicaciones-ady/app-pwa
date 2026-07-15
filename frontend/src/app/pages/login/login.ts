@@ -32,7 +32,15 @@ interface DeviceCheckResult {
           </div>
           @if (!connectivity.isOnline()) {
             <span class="offline-chip">
-              <svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5a7 7 0 0 1 14 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17" r="1.6" fill="currentColor"/></svg>
+              <svg viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M5 12.5a7 7 0 0 1 14 0"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                />
+                <circle cx="12" cy="17" r="1.6" fill="currentColor" />
+              </svg>
               Sin conexión
             </span>
           }
@@ -46,9 +54,14 @@ interface DeviceCheckResult {
         <div class="sheet-handle"></div>
         <div class="sheet-scroll">
           @if (deviceStatus(); as d) {
-            <div class="device-status" [class.registered]="d.registered" [class.trusted]="d.isTrusted">
+            <div
+              class="device-status"
+              [class.registered]="d.registered"
+              [class.trusted]="d.isTrusted"
+            >
               @if (d.registered) {
-                {{ d.isTrusted ? '✓ Confiado' : '✗ No confiado' }} · {{ d.deviceName }} · {{ d.userName ?? d.userEmail }}
+                {{ d.isTrusted ? '✓ Confiado' : '✗ No confiado' }} · {{ d.deviceName }} ·
+                {{ d.userName ?? d.userEmail }}
               } @else {
                 ✗ Dispositivo no registrado
               }
@@ -65,46 +78,130 @@ interface DeviceCheckResult {
           @switch (uiMode()) {
             @case ('first-time-offline') {
               <div class="offline-msg">
-                <svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5a7 7 0 0 1 14 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17" r="1.6" fill="currentColor"/></svg>
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M5 12.5a7 7 0 0 1 14 0"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                  />
+                  <circle cx="12" cy="17" r="1.6" fill="currentColor" />
+                </svg>
                 Conéctate a internet para iniciar sesión por primera vez
               </div>
             }
             @case ('first-time-online') {
               <button class="btn btn-primary" (click)="onMicrosoftLogin()" [disabled]="loading()">
-                <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="8" height="8" rx="1" fill="#fff"/><rect x="13" y="3" width="8" height="8" rx="1" fill="#fff"/><rect x="3" y="13" width="8" height="8" rx="1" fill="#fff"/><rect x="13" y="13" width="8" height="8" rx="1" fill="#fff"/></svg>
+                <svg viewBox="0 0 24 24" fill="none">
+                  <rect x="3" y="3" width="8" height="8" rx="1" fill="#fff" />
+                  <rect x="13" y="3" width="8" height="8" rx="1" fill="#fff" />
+                  <rect x="3" y="13" width="8" height="8" rx="1" fill="#fff" />
+                  <rect x="13" y="13" width="8" height="8" rx="1" fill="#fff" />
+                </svg>
                 Continuar con Microsoft
               </button>
               <div class="s1-foot">
-                <svg viewBox="0 0 24 24" fill="none"><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6l8-4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6l8-4Z"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M9 12l2 2 4-4"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
                 Conexión cifrada de extremo a extremo
               </div>
             }
             @case ('registered-offline') {
-              <button class="btn btn-primary" (click)="onPasskeyByFingerprint()" [disabled]="loading()">
-                <svg viewBox="0 0 24 24" fill="none"><path d="M12 4c-2.8 0-5 1.6-6 3.5M19 9c0-1.2-.5-2.4-1.3-3.4M5 11c0-1 .3-2 .8-2.8M4.5 16c.7-1.3 1-2.8 1-4.3M8 19c1-1.6 1.4-3.6 1.4-5.6 0-1.5 1-2.6 2.6-2.6s2.6 1.1 2.6 2.6c0 .9-.1 1.8-.3 2.6M11.8 13.4c0 3.2-.6 5.8-1.6 7.6M15 17.5c-.3 1-.7 2-1.2 2.9" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg>
+              <button
+                class="btn btn-primary"
+                (click)="onPasskeyByFingerprint()"
+                [disabled]="loading()"
+              >
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M12 4c-2.8 0-5 1.6-6 3.5M19 9c0-1.2-.5-2.4-1.3-3.4M5 11c0-1 .3-2 .8-2.8M4.5 16c.7-1.3 1-2.8 1-4.3M8 19c1-1.6 1.4-3.6 1.4-5.6 0-1.5 1-2.6 2.6-2.6s2.6 1.1 2.6 2.6c0 .9-.1 1.8-.3 2.6M11.8 13.4c0 3.2-.6 5.8-1.6 7.6M15 17.5c-.3 1-.7 2-1.2 2.9"
+                    stroke="#fff"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                  />
+                </svg>
                 {{ loading() ? 'Entrando…' : 'Entrar con huella' }}
               </button>
             }
             @case ('registered-online') {
-              <button class="btn btn-primary" (click)="onPasskeyByFingerprint()" [disabled]="loading()" style="padding:18px;font-size:17px;">
-                <svg viewBox="0 0 24 24" fill="none"><path d="M12 4c-2.8 0-5 1.6-6 3.5M19 9c0-1.2-.5-2.4-1.3-3.4M5 11c0-1 .3-2 .8-2.8M4.5 16c.7-1.3 1-2.8 1-4.3M8 19c1-1.6 1.4-3.6 1.4-5.6 0-1.5 1-2.6 2.6-2.6s2.6 1.1 2.6 2.6c0 .9-.1 1.8-.3 2.6M11.8 13.4c0 3.2-.6 5.8-1.6 7.6M15 17.5c-.3 1-.7 2-1.2 2.9" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg>
+              <button
+                class="btn btn-primary"
+                (click)="onPasskeyByFingerprint()"
+                [disabled]="loading()"
+                style="padding:18px;font-size:17px;"
+              >
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M12 4c-2.8 0-5 1.6-6 3.5M19 9c0-1.2-.5-2.4-1.3-3.4M5 11c0-1 .3-2 .8-2.8M4.5 16c.7-1.3 1-2.8 1-4.3M8 19c1-1.6 1.4-3.6 1.4-5.6 0-1.5 1-2.6 2.6-2.6s2.6 1.1 2.6 2.6c0 .9-.1 1.8-.3 2.6M11.8 13.4c0 3.2-.6 5.8-1.6 7.6M15 17.5c-.3 1-.7 2-1.2 2.9"
+                    stroke="#fff"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                  />
+                </svg>
                 {{ loading() ? 'Entrando…' : 'Entrar con huella' }}
               </button>
               <div class="divider">o continúa con</div>
               <div class="biometric">
                 <div class="bio-btn" (click)="onMicrosoftLogin()" title="Microsoft">
-                  <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="8" height="8" rx="1" fill="currentColor"/><rect x="13" y="3" width="8" height="8" rx="1" fill="currentColor"/><rect x="3" y="13" width="8" height="8" rx="1" fill="currentColor"/><rect x="13" y="13" width="8" height="8" rx="1" fill="currentColor"/></svg>
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <rect x="3" y="3" width="8" height="8" rx="1" fill="currentColor" />
+                    <rect x="13" y="3" width="8" height="8" rx="1" fill="currentColor" />
+                    <rect x="3" y="13" width="8" height="8" rx="1" fill="currentColor" />
+                    <rect x="13" y="13" width="8" height="8" rx="1" fill="currentColor" />
+                  </svg>
                 </div>
               </div>
             }
           }
+
+          <div class="divider">o</div>
+          <button class="btn-guest" (click)="onGuestEntry()">
+            <svg viewBox="0 0 24 24" fill="none">
+              <rect
+                x="4"
+                y="6"
+                width="16"
+                height="10"
+                rx="2"
+                stroke="currentColor"
+                stroke-width="1.8"
+              />
+              <path
+                d="M12 12c-.5-1.2-1.8-2-3.2-2C6.7 10 5.5 11 5 12.5M19 12.5c-.5-1.5-1.7-2.5-3.2-2.5-1.4 0-2.7.8-3.2 2M8 17c.5-1 1.5-1.8 2.8-1.8 1 0 1.8.4 2.4 1.2M12 17c.6-.8 1.5-1.2 2.4-1.2 1.3 0 2.3.8 2.8 1.8"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              />
+            </svg>
+            Explorar Herragro como invitado
+          </button>
         </div>
       </div>
     </div>
   `,
   styles: `
-    :host { display: block; height: 100%; }
-    .s1 { display: flex; flex-direction: column; height: 100vh; }
+    :host {
+      display: block;
+      height: 100%;
+    }
+    .s1 {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
     .s1-hero {
       position: relative;
       background: linear-gradient(160deg, #1356a0, var(--blue) 55%, #0c3567);
@@ -130,7 +227,7 @@ interface DeviceCheckResult {
       font-weight: 700;
       font-size: 13px;
       color: var(--ink);
-      box-shadow: 0 6px 14px -8px rgba(0,0,0,.4);
+      box-shadow: 0 6px 14px -8px rgba(0, 0, 0, 0.4);
     }
     .org-dot {
       width: 18px;
@@ -145,12 +242,15 @@ interface DeviceCheckResult {
       font-size: 10.5px;
       font-weight: 700;
       color: #bff0d2;
-      background: rgba(159,230,185,.16);
-      border: 1px solid rgba(159,230,185,.3);
+      background: rgba(159, 230, 185, 0.16);
+      border: 1px solid rgba(159, 230, 185, 0.3);
       padding: 5px 10px;
       border-radius: 999px;
     }
-    .offline-chip svg { width: 12px; height: 12px; }
+    .offline-chip svg {
+      width: 12px;
+      height: 12px;
+    }
     .s1-date {
       position: relative;
       z-index: 2;
@@ -176,7 +276,9 @@ interface DeviceCheckResult {
       flex: 1;
       overflow-y: auto;
     }
-    .sheet-scroll::-webkit-scrollbar { width: 0; }
+    .sheet-scroll::-webkit-scrollbar {
+      width: 0;
+    }
     .sheet-handle {
       width: 42px;
       height: 5px;
@@ -196,7 +298,9 @@ interface DeviceCheckResult {
       color: var(--muted);
       margin-bottom: 20px;
     }
-    .btn { margin-top: 8px; }
+    .btn {
+      margin-top: 8px;
+    }
     .divider {
       display: flex;
       align-items: center;
@@ -206,13 +310,17 @@ interface DeviceCheckResult {
       font-weight: 600;
       margin: 18px 2px;
     }
-    .divider::before, .divider::after {
-      content: "";
+    .divider::before,
+    .divider::after {
+      content: '';
       height: 1px;
       background: var(--line);
       flex: 1;
     }
-    .biometric { display: flex; justify-content: center; }
+    .biometric {
+      display: flex;
+      justify-content: center;
+    }
     .bio-btn {
       width: 54px;
       height: 54px;
@@ -224,8 +332,15 @@ interface DeviceCheckResult {
       cursor: pointer;
       transition: 0.15s;
     }
-    .bio-btn:hover { border-color: var(--accent); background: var(--accent-soft); }
-    .bio-btn svg { width: 24px; height: 24px; color: var(--blue); }
+    .bio-btn:hover {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+    }
+    .bio-btn svg {
+      width: 24px;
+      height: 24px;
+      color: var(--blue);
+    }
     .s1-foot {
       text-align: center;
       font-size: 10.5px;
@@ -237,7 +352,11 @@ interface DeviceCheckResult {
       gap: 6px;
       font-weight: 600;
     }
-    .s1-foot svg { width: 13px; height: 13px; opacity: 0.7; }
+    .s1-foot svg {
+      width: 13px;
+      height: 13px;
+      opacity: 0.7;
+    }
     .device-status {
       padding: 10px 14px;
       border-radius: 14px;
@@ -247,24 +366,62 @@ interface DeviceCheckResult {
       text-align: center;
       background: #f8d7da;
       color: #721c24;
-      border: 1px solid rgba(225,18,37,.15);
+      border: 1px solid rgba(225, 18, 37, 0.15);
     }
-    .device-status.registered { background: #fff3cd; color: #856404; border-color: rgba(242,186,42,.3); }
-    .device-status.trusted { background: #d4edda; color: #155724; border-color: rgba(62,155,97,.3); }
+    .device-status.registered {
+      background: #fff3cd;
+      color: #856404;
+      border-color: rgba(242, 186, 42, 0.3);
+    }
+    .device-status.trusted {
+      background: #d4edda;
+      color: #155724;
+      border-color: rgba(62, 155, 97, 0.3);
+    }
     .offline-msg {
       display: flex;
       align-items: center;
       gap: 10px;
-      background: rgba(225,18,37,.06);
+      background: rgba(225, 18, 37, 0.06);
       color: var(--accent-deep);
       padding: 14px 16px;
       border-radius: 14px;
       font-size: 13px;
       font-weight: 600;
       line-height: 1.4;
-      border: 1px solid rgba(225,18,37,.12);
+      border: 1px solid rgba(225, 18, 37, 0.12);
     }
-    .offline-msg svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .offline-msg svg {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+    .btn-guest {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 14px;
+      border-radius: 14px;
+      font-size: 14px;
+      font-weight: 700;
+      font-family: var(--body);
+      cursor: pointer;
+      background: var(--white);
+      color: var(--blue);
+      border: 1.6px solid var(--blue);
+      transition: 0.15s;
+      margin-top: 4px;
+    }
+    .btn-guest:hover {
+      background: #e8f0fe;
+    }
+    .btn-guest svg {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
   `,
 })
 export class Login {
@@ -277,7 +434,14 @@ export class Login {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
 
-  protected readonly today = new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }).replace(/^\w/, c => c.toUpperCase());
+  protected readonly today = new Date()
+    .toLocaleDateString('es-ES', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    })
+    .replace(/^\w/, (c) => c.toUpperCase());
 
   protected readonly error = signal<string | null>(null);
   protected readonly loading = signal(false);
@@ -314,7 +478,10 @@ export class Login {
       const legacy = await this.fingerprintService.getLegacyFingerprint();
       this.deviceFingerprint.set(fingerprint);
       const resp = await firstValueFrom(
-        this.http.post<DeviceCheckResult>('/api/devices/check', { fingerprint, legacyFingerprint: legacy }),
+        this.http.post<DeviceCheckResult>('/api/devices/check', {
+          fingerprint,
+          legacyFingerprint: legacy,
+        }),
       );
       this.deviceStatus.set(resp);
       await this.indexedDb.setDeviceCheck(resp);
@@ -338,6 +505,11 @@ export class Login {
       this.error.set('Error al conectar con Microsoft');
       this.loading.set(false);
     }
+  }
+
+  protected onGuestEntry() {
+    this.authService.enableGuestMode();
+    this.router.navigate(['/herragro']);
   }
 
   protected async onPasskeyByFingerprint() {

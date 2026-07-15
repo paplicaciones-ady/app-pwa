@@ -31,7 +31,7 @@ export class AuthService {
   readonly initComplete: Promise<void>;
 
   constructor() {
-    this.initComplete = new Promise(resolve => {
+    this.initComplete = new Promise((resolve) => {
       this._initResolve = resolve;
     });
   }
@@ -44,6 +44,7 @@ export class AuthService {
   });
   readonly isFullyAuthenticated = computed(() => this.authLevel() === 'full');
   readonly deviceFingerprint = signal<string | null>(null);
+  readonly guestMode = signal(false);
 
   async init() {
     if (!isPlatformBrowser(this.platformId)) {
@@ -92,27 +93,23 @@ export class AuthService {
   }
 
   register(email: string, password: string): Observable<{ access_token: string }> {
-    return this.http
-      .post<{ access_token: string }>('/api/auth/register', { email, password })
-      .pipe(
-        tap(async (res) => {
-          this.token.set(res.access_token);
-          await this.indexedDb.setToken(res.access_token);
-          this.fetchUser();
-        }),
-      );
+    return this.http.post<{ access_token: string }>('/api/auth/register', { email, password }).pipe(
+      tap(async (res) => {
+        this.token.set(res.access_token);
+        await this.indexedDb.setToken(res.access_token);
+        this.fetchUser();
+      }),
+    );
   }
 
   login(email: string, password: string): Observable<{ access_token: string }> {
-    return this.http
-      .post<{ access_token: string }>('/api/auth/login', { email, password })
-      .pipe(
-        tap(async (res) => {
-          this.token.set(res.access_token);
-          await this.indexedDb.setToken(res.access_token);
-          this.fetchUser();
-        }),
-      );
+    return this.http.post<{ access_token: string }>('/api/auth/login', { email, password }).pipe(
+      tap(async (res) => {
+        this.token.set(res.access_token);
+        await this.indexedDb.setToken(res.access_token);
+        this.fetchUser();
+      }),
+    );
   }
 
   async logout() {
@@ -121,6 +118,7 @@ export class AuthService {
     this.microsoftSession.set(null);
     this.localSession.set(false);
     this.deviceFingerprint.set(null);
+    this.guestMode.set(false);
     await this.indexedDb.removeToken();
     await this.indexedDb.removeAuthMethod();
     await this.indexedDb.removeDeviceCheck();
@@ -143,6 +141,10 @@ export class AuthService {
         // Microsoft refresh not available, stay at local level
       }
     }
+  }
+
+  enableGuestMode() {
+    this.guestMode.set(true);
   }
 
   /** Solo para debug: invalida la sesión Microsoft en memoria sin hacer logout */
