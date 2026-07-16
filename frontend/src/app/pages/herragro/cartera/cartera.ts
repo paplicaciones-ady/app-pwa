@@ -160,7 +160,7 @@ import { Router } from '@angular/router';
       border-radius: 1px;
       background: #eef2f7;
     }
-    .batt.red i:nth-child(-n+5) { background: var(--accent); }
+    .batt.red i:nth-child(-n+1) { background: var(--accent); }
     .batt.yellow i:nth-child(-n+3) { background: var(--yellow); }
     .batt.green i { background: var(--green); }
   `,

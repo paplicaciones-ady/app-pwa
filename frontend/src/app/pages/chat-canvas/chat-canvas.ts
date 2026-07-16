@@ -5,20 +5,23 @@ import { lastValueFrom } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { MarkdownPipe } from '../../pipes/markdown.pipe';
 import { AdaptiveCardComponent } from '../../components/adaptive-card/adaptive-card';
+import { ChatChartComponent } from '../../components/chat-chart/chat-chart';
 import { AuthService } from '../../services/auth.service';
 import { IndexedDbService } from '../../services/indexed-db.service';
+import { extractChartDataFromText, ChartData } from '../../utils/chart-extractor';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
   text: string;
   card?: any;
   oauthCard?: any;
+  chart?: ChartData;
 }
 
 @Component({
   selector: 'app-chat-canvas',
   standalone: true,
-  imports: [FormsModule, MarkdownPipe, AdaptiveCardComponent],
+  imports: [FormsModule, MarkdownPipe, AdaptiveCardComponent, ChatChartComponent],
   template: `
     <div class="chat-container">
       <header class="chat-header">
@@ -36,7 +39,11 @@ interface ChatMessage {
           </div>
         }
         @for (msg of messages(); track $index) {
-          <div class="message" [class.user]="msg.role === 'user'" [class.assistant]="msg.role === 'assistant'">
+          <div
+            class="message"
+            [class.user]="msg.role === 'user'"
+            [class.assistant]="msg.role === 'assistant'"
+          >
             @if (msg.role === 'assistant') {
               @if (msg.text) {
                 <div class="bubble" [innerHTML]="msg.text | markdown"></div>
@@ -47,8 +54,13 @@ interface ChatMessage {
               @if (msg.oauthCard) {
                 <div class="oauth-card">
                   <p class="oauth-text">{{ msg.oauthCard.text }}</p>
-                  <button class="oauth-btn" (click)="openSignIn(msg.oauthCard)">Iniciar sesión</button>
+                  <button class="oauth-btn" (click)="openSignIn(msg.oauthCard)">
+                    Iniciar sesión
+                  </button>
                 </div>
+              }
+              @if (msg.chart) {
+                <app-chat-chart [chartData]="msg.chart" />
               }
             } @else {
               <div class="bubble">{{ msg.text }}</div>
@@ -67,7 +79,9 @@ interface ChatMessage {
       @if (suggestedActions(); as actions) {
         <div class="suggested-bar">
           @for (action of actions; track $index) {
-            <button class="suggested-action-btn" (click)="sendSuggested(action)">{{ action.title }}</button>
+            <button class="suggested-action-btn" (click)="sendSuggested(action)">
+              {{ action.title }}
+            </button>
           }
         </div>
       }
@@ -80,220 +94,334 @@ interface ChatMessage {
           (keydown.enter)="send()"
           [disabled]="loading() || !!suggestedActions()"
         />
-        <button (click)="send()" [disabled]="!inputText().trim() || loading() || !!suggestedActions()">Enviar</button>
+        <button
+          (click)="send()"
+          [disabled]="!inputText().trim() || loading() || !!suggestedActions()"
+        >
+          Enviar
+        </button>
       </div>
     </div>
   `,
   styles: [
     `
-    :host { display: contents; }
+      :host {
+        display: contents;
+      }
 
-    .chat-container {
-      display: flex; flex-direction: column;
-      height: calc(100vh - 130px); /* room for navbar + bottom nav */
-      font-family: var(--body);
-    }
+      .chat-container {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 130px); /* room for navbar + bottom nav */
+        font-family: var(--body);
+      }
 
-    .chat-header {
-      display: flex; align-items: center; gap: 0.75rem;
-      padding: 16px 20px;
-      background: linear-gradient(155deg, #1356a0, var(--blue) 60%, #0d3970);
-      color: #fff; font-weight: 600;
-    }
+      .chat-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 16px 20px;
+        background: linear-gradient(155deg, #1356a0, var(--blue) 60%, #0d3970);
+        color: #fff;
+        font-weight: 600;
+      }
 
-    .back-btn {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      color: rgba(255,255,255,.9);
-      text-decoration: none;
-      font-size: 13px;
-      font-weight: 700;
-      padding: 6px 14px;
-      border-radius: 999px;
-      background: rgba(255,255,255,.12);
-      border: 1px solid rgba(255,255,255,.16);
-      cursor: pointer;
-    }
-    .back-btn:hover { background: rgba(255,255,255,.2); }
+      .back-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: rgba(255, 255, 255, 0.9);
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 700;
+        padding: 6px 14px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        cursor: pointer;
+      }
+      .back-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
 
-    .title { flex: 1; text-align: center; font-family: var(--display); font-size: 17px; }
+      .title {
+        flex: 1;
+        text-align: center;
+        font-family: var(--display);
+        font-size: 17px;
+      }
 
-    .new-chat-btn {
-      background: rgba(255,255,255,.12);
-      color: #fff;
-      border: 1px solid rgba(255,255,255,.16);
-      border-radius: 999px;
-      padding: 6px 14px;
-      font-family: var(--display);
-      font-weight: 700;
-      font-size: 12px;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-    .new-chat-btn:hover { background: rgba(255,255,255,.2); }
-    .new-chat-btn:disabled { opacity: 0.5; cursor: default; }
+      .new-chat-btn {
+        background: rgba(255, 255, 255, 0.12);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 999px;
+        padding: 6px 14px;
+        font-family: var(--display);
+        font-weight: 700;
+        font-size: 12px;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .new-chat-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+      .new-chat-btn:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
 
-    .messages {
-      flex: 1; overflow-y: auto; padding: 16px 16px 8px;
-      display: flex; flex-direction: column; gap: 12px;
-      background: var(--bg);
-    }
+      .messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px 16px 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        background: var(--bg);
+      }
 
-    .empty-state {
-      text-align: center; margin: auto; color: var(--muted);
-    }
+      .empty-state {
+        text-align: center;
+        margin: auto;
+        color: var(--muted);
+      }
 
-    .empty-icon { font-size: 48px; display: block; margin-bottom: 12px; }
-    .hint { font-size: 12px; color: var(--faint); margin-top: 4px; }
+      .empty-icon {
+        font-size: 48px;
+        display: block;
+        margin-bottom: 12px;
+      }
+      .hint {
+        font-size: 12px;
+        color: var(--faint);
+        margin-top: 4px;
+      }
 
-    .message { display: flex; }
-    .message.user { justify-content: flex-end; }
-    .message.assistant { justify-content: flex-start; }
+      .message {
+        display: flex;
+      }
+      .message.user {
+        justify-content: flex-end;
+      }
+      .message.assistant {
+        justify-content: flex-start;
+      }
 
-    .bubble {
-      max-width: 80%; padding: 10px 16px; border-radius: 16px;
-      font-size: 13.5px; line-height: 1.45; word-break: break-word;
-    }
+      .bubble {
+        max-width: 80%;
+        padding: 10px 16px;
+        border-radius: 16px;
+        font-size: 13.5px;
+        line-height: 1.45;
+        word-break: break-word;
+      }
 
-    .message.user .bubble {
-      background: linear-gradient(135deg, var(--accent), var(--accent-deep));
-      color: #fff;
-      border-bottom-right-radius: 4px;
-    }
+      .message.user .bubble {
+        background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+        color: #fff;
+        border-bottom-right-radius: 4px;
+      }
 
-    .message.assistant .bubble {
-      background: var(--white);
-      color: var(--ink);
-      border: 1px solid var(--line);
-      border-bottom-left-radius: 4px;
-      line-height: 1.6;
-    }
+      .message.assistant .bubble {
+        background: var(--white);
+        color: var(--ink);
+        border: 1px solid var(--line);
+        border-bottom-left-radius: 4px;
+        line-height: 1.6;
+      }
 
-    ::ng-deep .message.assistant .bubble p { margin: 0 0 0.5rem 0; }
-    ::ng-deep .message.assistant .bubble p:last-child { margin-bottom: 0; }
-    ::ng-deep .message.assistant .bubble code {
-      background: #eef2f7; padding: 0.15rem 0.4rem; border-radius: 4px;
-      font-size: 12px; font-family: 'Courier New', monospace;
-    }
-    ::ng-deep .message.assistant .bubble pre {
-      background: #1e1e1e; color: #d4d4d4; padding: 12px; border-radius: 8px;
-      overflow-x: auto; margin: 8px 0;
-    }
-    ::ng-deep .message.assistant .bubble pre code {
-      background: transparent; padding: 0; color: inherit; font-size: 12px;
-    }
-    ::ng-deep .message.assistant .bubble ul,
-    ::ng-deep .message.assistant .bubble ol {
-      padding-left: 1.5rem; margin: 0.25rem 0;
-    }
-    ::ng-deep .message.assistant .bubble li { margin-bottom: 0.15rem; }
-    ::ng-deep .message.assistant .bubble a { color: var(--accent); text-decoration: underline; }
-    ::ng-deep .message.assistant .bubble strong { font-weight: 600; }
+      ::ng-deep .message.assistant .bubble p {
+        margin: 0 0 0.5rem 0;
+      }
+      ::ng-deep .message.assistant .bubble p:last-child {
+        margin-bottom: 0;
+      }
+      ::ng-deep .message.assistant .bubble code {
+        background: #eef2f7;
+        padding: 0.15rem 0.4rem;
+        border-radius: 4px;
+        font-size: 12px;
+        font-family: 'Courier New', monospace;
+      }
+      ::ng-deep .message.assistant .bubble pre {
+        background: #1e1e1e;
+        color: #d4d4d4;
+        padding: 12px;
+        border-radius: 8px;
+        overflow-x: auto;
+        margin: 8px 0;
+      }
+      ::ng-deep .message.assistant .bubble pre code {
+        background: transparent;
+        padding: 0;
+        color: inherit;
+        font-size: 12px;
+      }
+      ::ng-deep .message.assistant .bubble ul,
+      ::ng-deep .message.assistant .bubble ol {
+        padding-left: 1.5rem;
+        margin: 0.25rem 0;
+      }
+      ::ng-deep .message.assistant .bubble li {
+        margin-bottom: 0.15rem;
+      }
+      ::ng-deep .message.assistant .bubble a {
+        color: var(--accent);
+        text-decoration: underline;
+      }
+      ::ng-deep .message.assistant .bubble strong {
+        font-weight: 600;
+      }
 
-    .oauth-card {
-      background: linear-gradient(135deg, #e3f2fd, #bbdefb);
-      border: 1.5px solid #90caf9;
-      border-radius: 12px;
-      padding: 14px 18px;
-      margin: 6px 0;
-      text-align: center;
-      max-width: 80%;
-    }
-    .oauth-text {
-      margin: 0 0 10px 0;
-      font-size: 13px;
-      color: #1565c0;
-      font-weight: 500;
-    }
-    .oauth-btn {
-      background: linear-gradient(135deg, #1976d2, #1565c0);
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      padding: 8px 20px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-    .oauth-btn:hover {
-      background: linear-gradient(135deg, #1565c0, #0d47a1);
-      transform: translateY(-1px);
-      box-shadow: 0 2px 8px rgba(25, 118, 210, 0.3);
-    }
+      .oauth-card {
+        background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+        border: 1.5px solid #90caf9;
+        border-radius: 12px;
+        padding: 14px 18px;
+        margin: 6px 0;
+        text-align: center;
+        max-width: 80%;
+      }
+      .oauth-text {
+        margin: 0 0 10px 0;
+        font-size: 13px;
+        color: #1565c0;
+        font-weight: 500;
+      }
+      .oauth-btn {
+        background: linear-gradient(135deg, #1976d2, #1565c0);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 8px 20px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+      .oauth-btn:hover {
+        background: linear-gradient(135deg, #1565c0, #0d47a1);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(25, 118, 210, 0.3);
+      }
 
-    .suggested-bar {
-      display: flex; flex-wrap: wrap; gap: 8px;
-      padding: 12px 16px 0;
-      background: var(--white);
-      border-top: 1px solid var(--line);
-    }
+      ::ng-deep app-chat-chart {
+        display: block;
+        margin-top: 8px;
+        max-width: 80%;
+      }
 
-    .suggested-action-btn {
-      padding: 6px 16px;
-      border: 1.5px solid var(--accent);
-      border-radius: 999px;
-      background: transparent;
-      color: var(--accent);
-      font-size: 12.5px;
-      font-family: var(--body);
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.15s ease;
-      line-height: 1.4;
-    }
+      .suggested-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 12px 16px 0;
+        background: var(--white);
+        border-top: 1px solid var(--line);
+      }
 
-    .suggested-action-btn:hover {
-      background: var(--accent);
-      color: #fff;
-    }
+      .suggested-action-btn {
+        padding: 6px 16px;
+        border: 1.5px solid var(--accent);
+        border-radius: 999px;
+        background: transparent;
+        color: var(--accent);
+        font-size: 12.5px;
+        font-family: var(--body);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        line-height: 1.4;
+      }
 
-    .typing { display: flex; gap: 4px; align-items: center; padding: 8px 16px; }
+      .suggested-action-btn:hover {
+        background: var(--accent);
+        color: #fff;
+      }
 
-    .dot {
-      width: 8px; height: 8px; border-radius: 50%; background: var(--faint);
-      animation: bounce 1.4s infinite ease-in-out;
-    }
+      .typing {
+        display: flex;
+        gap: 4px;
+        align-items: center;
+        padding: 8px 16px;
+      }
 
-    .dot:nth-child(2) { animation-delay: 0.2s; }
-    .dot:nth-child(3) { animation-delay: 0.4s; }
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--faint);
+        animation: bounce 1.4s infinite ease-in-out;
+      }
 
-    @keyframes bounce {
-      0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
-      40% { transform: scale(1); opacity: 1; }
-    }
+      .dot:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+      .dot:nth-child(3) {
+        animation-delay: 0.4s;
+      }
 
-    .input-bar {
-      display: flex; gap: 8px; padding: 12px 16px;
-      border-top: 1px solid var(--line); background: var(--white);
-      padding-bottom: calc(12px + env(safe-area-inset-bottom));
-    }
+      @keyframes bounce {
+        0%,
+        80%,
+        100% {
+          transform: scale(0.6);
+          opacity: 0.4;
+        }
+        40% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
 
-    .input-bar input {
-      flex: 1; padding: 0 16px; border: 1.6px solid var(--line);
-      border-radius: 24px; font-size: 13.5px; outline: none;
-      font-family: var(--body); font-weight: 600; color: var(--ink);
-      height: 44px;
-    }
+      .input-bar {
+        display: flex;
+        gap: 8px;
+        padding: 12px 16px;
+        border-top: 1px solid var(--line);
+        background: var(--white);
+        padding-bottom: calc(12px + env(safe-area-inset-bottom));
+      }
 
-    .input-bar input::placeholder { color: var(--faint); font-weight: 500; }
-    .input-bar input:focus { border-color: var(--accent); }
+      .input-bar input {
+        flex: 1;
+        padding: 0 16px;
+        border: 1.6px solid var(--line);
+        border-radius: 24px;
+        font-size: 13.5px;
+        outline: none;
+        font-family: var(--body);
+        font-weight: 600;
+        color: var(--ink);
+        height: 44px;
+      }
 
-    .input-bar button {
-      height: 44px;
-      padding: 0 20px;
-      border: none;
-      border-radius: 24px;
-      background: linear-gradient(135deg, var(--accent), var(--accent-deep));
-      color: #fff;
-      font-family: var(--display);
-      font-weight: 700;
-      font-size: 13px;
-      cursor: pointer;
-    }
+      .input-bar input::placeholder {
+        color: var(--faint);
+        font-weight: 500;
+      }
+      .input-bar input:focus {
+        border-color: var(--accent);
+      }
 
-    .input-bar button:disabled { opacity: 0.5; cursor: default; }
+      .input-bar button {
+        height: 44px;
+        padding: 0 20px;
+        border: none;
+        border-radius: 24px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+        color: #fff;
+        font-family: var(--display);
+        font-weight: 700;
+        font-size: 13px;
+        cursor: pointer;
+      }
+
+      .input-bar button:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
     `,
   ],
 })
@@ -341,19 +469,31 @@ export class ChatCanvas {
 
   private async persistChat() {
     await this.indexedDb.setChatMessages(this.messages());
-    this.channel?.postMessage({ type: 'chat-update', messages: this.messages(), sessionId: this.sessionId() });
+    this.channel?.postMessage({
+      type: 'chat-update',
+      messages: this.messages(),
+      sessionId: this.sessionId(),
+    });
   }
 
   private async initSession() {
     try {
       const res = await lastValueFrom(
-        this.http.post<{ sessionId: string; welcome: string; card?: any; suggestedActions?: { title: string; value?: any }[] }>('/api/copilot/session', {}),
+        this.http.post<{
+          sessionId: string;
+          welcome: string;
+          card?: any;
+          suggestedActions?: { title: string; value?: any }[];
+        }>('/api/copilot/session', {}),
       );
       this.sessionId.set(res.sessionId);
       this.suggestedActions.set(res.suggestedActions ?? null);
       await this.indexedDb.setChatSessionId(res.sessionId);
       if (res.welcome) {
-        this.messages.update((m) => [...m, { role: 'assistant', text: res.welcome, card: res.card }]);
+        this.messages.update((m) => [
+          ...m,
+          { role: 'assistant', text: res.welcome, card: res.card },
+        ]);
         await this.persistChat();
       }
     } catch {
@@ -375,25 +515,49 @@ export class ChatCanvas {
       // Create session if none active
       if (!sid) {
         const sessionRes = await lastValueFrom(
-        this.http.post<{ sessionId: string; welcome: string; card?: any; suggestedActions?: { title: string; value?: any }[] }>('/api/copilot/session', {}),
+          this.http.post<{
+            sessionId: string;
+            welcome: string;
+            card?: any;
+            suggestedActions?: { title: string; value?: any }[];
+          }>('/api/copilot/session', {}),
         );
         sid = sessionRes.sessionId;
         this.sessionId.set(sid);
         this.suggestedActions.set(sessionRes.suggestedActions ?? null);
         await this.indexedDb.setChatSessionId(sid);
         if (sessionRes.welcome) {
-          this.messages.update((m) => [...m, { role: 'assistant', text: sessionRes.welcome, card: sessionRes.card }]);
+          this.messages.update((m) => [
+            ...m,
+            { role: 'assistant', text: sessionRes.welcome, card: sessionRes.card },
+          ]);
         }
       }
 
       const res = await lastValueFrom(
-        this.http.post<{ reply: string; sessionId: string; card?: any; oauthCard?: any; suggestedActions?: { title: string; value?: any }[] }>('/api/copilot/chat', {
+        this.http.post<{
+          reply: string;
+          sessionId: string;
+          card?: any;
+          oauthCard?: any;
+          suggestedActions?: { title: string; value?: any }[];
+        }>('/api/copilot/chat', {
           message: text,
           sessionId: sid,
         }),
       );
       this.suggestedActions.set(res.suggestedActions ?? null);
-      this.messages.update((m) => [...m, { role: 'assistant', text: res.reply, card: res.card, oauthCard: res.oauthCard }]);
+      const detectedChart = extractChartDataFromText(res.reply);
+      this.messages.update((m) => [
+        ...m,
+        {
+          role: 'assistant',
+          text: res.reply,
+          card: res.card,
+          oauthCard: res.oauthCard,
+          chart: detectedChart ?? undefined,
+        },
+      ]);
 
       // Update sessionId if backend rotated it
       if (res.sessionId && res.sessionId !== sid) {
@@ -449,10 +613,12 @@ export class ChatCanvas {
     try {
       const sid = this.sessionId()!;
       const res = await lastValueFrom(
-        this.http.post<{ reply: string; sessionId: string; card?: any; suggestedActions?: { title: string; value?: any }[] }>(
-          '/api/copilot/chat',
-          { value: formData, sessionId: sid },
-        ),
+        this.http.post<{
+          reply: string;
+          sessionId: string;
+          card?: any;
+          suggestedActions?: { title: string; value?: any }[];
+        }>('/api/copilot/chat', { value: formData, sessionId: sid }),
       );
       this.suggestedActions.set(res.suggestedActions ?? null);
       this.messages.update((m) => [...m, { role: 'assistant', text: res.reply, card: res.card }]);
@@ -463,7 +629,10 @@ export class ChatCanvas {
       await this.persistChat();
     } catch {
       this.suggestedActions.set(null);
-      this.messages.update((m) => [...m, { role: 'assistant', text: 'Error al conectar con Copilot Studio.' }]);
+      this.messages.update((m) => [
+        ...m,
+        { role: 'assistant', text: 'Error al conectar con Copilot Studio.' },
+      ]);
     } finally {
       this.loading.set(false);
     }

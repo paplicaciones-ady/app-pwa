@@ -24,6 +24,7 @@
     "@angular/ssr": "^21.2.14",
     "@simplewebauthn/browser": "^13.3.0",
     "adaptivecards": "^3.0.6",
+    "chart.js": "^4.5.1",
     "express": "^5.1.0",
     "http-proxy-middleware": "^4.1.0",
     "marked": "^18.0.5",
