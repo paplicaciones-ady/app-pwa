@@ -226,5 +226,51 @@ textarea {
   background: var(--accent);
   border: 3px solid var(--white);
   border-radius: 50%;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    0 0 0 6px rgba(var(--accent-rgb), 0.18);
+  animation: locPulse 2s ease-out infinite;
+}
+
+@keyframes locPulse {
+  0% {
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.3),
+      0 0 0 4px rgba(var(--accent-rgb), 0.25);
+  }
+  100% {
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.3),
+      0 0 0 14px rgba(var(--accent-rgb), 0);
+  }
+}
+
+/* Leaflet client markers */
+.client-marker {
+  background: var(--blue);
+  border: 3px solid var(--white);
+  border-radius: 50%;
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.35),
+    0 0 0 2px rgba(16, 69, 132, 0.12);
+  transition: transform 0.15s;
+}
+
+/* Leaflet popup overrides */
+.leaflet-popup-content-wrapper {
+  border-radius: 12px !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18) !important;
+  font-family: var(--body) !important;
+}
+.leaflet-popup-content {
+  margin: 10px 14px !important;
+  font-size: 12.5px !important;
+  line-height: 1.45 !important;
+}
+.leaflet-popup-content b {
+  font-family: var(--display);
+  font-size: 13px;
+}
+.leaflet-popup-tip {
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12) !important;
 }

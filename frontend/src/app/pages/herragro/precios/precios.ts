@@ -66,9 +66,12 @@ import { Router } from '@angular/router';
           <div class="prcard">
             <div class="th">
               <img
-                [src]="'products/' + p.codigo + '.png'"
+                [src]="'/products/' + p.codigo + '.png'"
                 [alt]="p.nombre"
-                (error)="$any($event.target).style.display = 'none'"
+                (error)="
+                  $any($event.target).src =
+                    'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 80 80%27 fill=%27none%27%3E%3Crect x=%2710%27 y=%2710%27 width=%2760%27 height=%2760%27 rx=%2710%27 fill=%27%23f0f0f0%27 stroke=%27%23ccc%27 stroke-width=%272%27/%3E%3Cpath d=%27M28 24l4-4h16l4 4v32l-4 4H32l-4-4z%27 fill=%27%23e8e8e8%27 stroke=%27%23bbb%27 stroke-width=%271.5%27/%3E%3Cpath d=%27M36 34h8M40 30v8%27 stroke=%27%23999%27 stroke-width=%272%27 stroke-linecap=%27round%27/%3E%3C/svg%3E'
+                "
                 loading="lazy"
               />
             </div>

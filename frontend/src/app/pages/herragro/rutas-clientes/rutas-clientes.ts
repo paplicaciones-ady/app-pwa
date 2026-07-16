@@ -54,31 +54,27 @@ interface Cliente {
         </button>
       </div>
 
-      @if (activeTab() === 'clientes') {
-        <div class="content">
-          @for (c of clientes; track c.nombre) {
-            <div class="ccard">
-              <div class="ccinfo">
-                <div class="ccname">{{ c.nombre }}</div>
-                <div class="ccdir">{{ c.direccion }}</div>
-              </div>
-              <button
-                class="toggle"
-                [class.on]="c.habilitado()"
-                (click)="c.habilitado.set(!c.habilitado())"
-              >
-                <span class="knob"></span>
-              </button>
+      <div class="content" [class.hidden]="activeTab() !== 'clientes'">
+        @for (c of clientes; track c.nombre) {
+          <div class="ccard">
+            <div class="ccinfo">
+              <div class="ccname">{{ c.nombre }}</div>
+              <div class="ccdir">{{ c.direccion }}</div>
             </div>
-          }
-        </div>
-      }
+            <button
+              class="toggle"
+              [class.on]="c.habilitado()"
+              (click)="c.habilitado.set(!c.habilitado())"
+            >
+              <span class="knob"></span>
+            </button>
+          </div>
+        }
+      </div>
 
-      @if (activeTab() === 'mapa') {
-        <div class="mapwrap">
-          <div class="mapholder" #mapContainer></div>
-        </div>
-      }
+      <div class="mapwrap" [class.hidden]="activeTab() !== 'mapa'">
+        <div class="mapholder" #mapContainer></div>
+      </div>
     </div>
   `,
   styles: `
@@ -236,6 +232,9 @@ interface Cliente {
       position: absolute;
       inset: 0;
     }
+    .hidden {
+      display: none !important;
+    }
   `,
 })
 export class RutasClientes implements OnDestroy {
@@ -268,7 +267,7 @@ export class RutasClientes implements OnDestroy {
     },
   ];
 
-  private readonly CURRENT_LOCATION = { lat: 5.059, lng: -75.502 };
+  private readonly CURRENT_LOCATION = { lat: 5.0319, lng: -75.461 };
   private readonly MAP_ZOOM = 14;
 
   private readonly clientCoords: Record<string, { lat: number; lng: number }> = {
@@ -302,8 +301,10 @@ export class RutasClientes implements OnDestroy {
 
         L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; OpenStreetMap',
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+          maxZoom: 19,
         }).addTo(map);
 
         L.marker([this.CURRENT_LOCATION.lat, this.CURRENT_LOCATION.lng], {
@@ -313,7 +314,7 @@ export class RutasClientes implements OnDestroy {
             iconAnchor: [8, 8],
           }),
         })
-          .bindPopup('<b>Ubicación actual</b><br>Cl. 103, Manizales')
+          .bindPopup('<b>Ubicación actual</b><br>Cl. 103 #33b-2 a 33b-32, Manizales')
           .addTo(map);
 
         const markersLayer = L.layerGroup().addTo(map);
@@ -349,12 +350,32 @@ export class RutasClientes implements OnDestroy {
       .forEach((c) => {
         const coords = this.clientCoords[c.nombre];
         if (!coords) return;
-        L.marker([coords.lat, coords.lng])
+        L.marker([coords.lat, coords.lng], {
+          icon: L.divIcon({
+            className: 'client-marker',
+            iconSize: [14, 14],
+            iconAnchor: [7, 7],
+          }),
+        })
           .bindPopup(`<b>${c.nombre}</b><br>${c.direccion}`)
           .addTo(layer);
       });
 
     map.invalidateSize();
+
+    const points: [number, number][] = [
+      [this.CURRENT_LOCATION.lat, this.CURRENT_LOCATION.lng],
+      ...this.clientes
+        .filter((c) => c.habilitado())
+        .map((c) => {
+          const coords = this.clientCoords[c.nombre];
+          return coords ? ([coords.lat, coords.lng] as [number, number]) : null;
+        })
+        .filter((p): p is [number, number] => p !== null),
+    ];
+    if (points.length > 0) {
+      map.fitBounds(L.latLngBounds(points).pad(0.2), { maxZoom: 15, padding: [40, 40] });
+    }
   }
 
   protected goBack(): void {
