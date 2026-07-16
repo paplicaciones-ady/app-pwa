@@ -1,5 +1,13 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
+
+function parseColombianPrice(v: string): number {
+  return Number(v.replace(/[^0-9]/g, '')) || 0;
+}
+
+function formatCOP(n: number): string {
+  return '$' + Math.round(n).toLocaleString('es-CO');
+}
 
 @Component({
   selector: 'app-descuentos',
@@ -25,43 +33,47 @@ import { Router } from '@angular/router';
 
       <div class="body">
         <div class="budget">
-          <div class="bar"><i></i><span class="exe">$2.689.523 · 86%</span></div>
+          <div class="bar">
+            <i [style.width.%]="budgetPct()"></i
+            ><span class="exe">{{ formatCOP(budgetExecuted()) }} · {{ budgetPct() }}%</span>
+          </div>
           <span class="vsg">3.142.676,3 V.sg</span>
         </div>
 
-        @for (p of productos; track p.nombre) {
-          <div class="pcard">
-            <div class="ph">{{ p.nombre }}</div>
-            <div class="pb">
-              <div class="pthumb">
-                <img
-                  [src]="'products/' + p.codigo + '.png'"
-                  [alt]="p.nombre"
-                  (error)="$any($event.target).style.display = 'none'"
-                  loading="lazy"
-                />
+        <div class="products">
+          @for (p of productos; track p.codigo) {
+            <div class="pcard">
+              <div class="ph">{{ p.nombre }}</div>
+              <div class="pb">
+                <div class="pthumb">
+                  <img
+                    [src]="'products/' + p.codigo + '.png'"
+                    [alt]="p.nombre"
+                    (error)="$any($event.target).style.display = 'none'"
+                    loading="lazy"
+                  />
+                </div>
+                <div class="pdet">
+                  @for (r of p.rows; track r.label) {
+                    <div class="rowd">
+                      <span>{{ r.label }}</span
+                      ><b>{{ r.value }}</b>
+                    </div>
+                  }
+                  <div class="tot">{{ formatCOP(p.unitPrice * p.cantidad()) }}</div>
+                </div>
               </div>
-              <div class="pdet">
-                @for (r of p.rows; track r.label) {
-                  <div class="rowd">
-                    <span>{{ r.label }}</span
-                    ><b>{{ r.value }}</b>
-                  </div>
-                }
-                @if (p.total) {
-                  <div class="tot">{{ p.total }}</div>
-                }
+              <div class="pfoot">
+                <div class="stepper">
+                  <button (click)="p.cantidad.set(Math.max(0, p.cantidad() - 1))">−</button>
+                  <span>{{ p.cantidad() }}</span>
+                  <button (click)="p.cantidad.set(p.cantidad() + 1)">+</button>
+                </div>
+                <button class="pctbtn">%</button>
               </div>
             </div>
-            <div class="pfoot">
-              <div class="stepper">
-                <button>&minus;</button><span>{{ p.cantidad }}</span
-                ><button>+</button>
-              </div>
-              <button class="pctbtn">%</button>
-            </div>
-          </div>
-        }
+          }
+        </div>
 
         <div class="addmore">¿Algo más por agregar?</div>
         <div class="suggest">
@@ -101,10 +113,59 @@ import { Router } from '@angular/router';
         </div>
       </div>
 
+      @if (summaryOpen()) {
+        <div class="summarypanel">
+          <div class="sp-title">Resumen del pedido</div>
+          @for (p of productos; track p.codigo) {
+            @if (p.cantidad() > 0) {
+              <div class="sp-row">
+                <span class="sp-name">{{ p.nombre }}</span>
+                <span class="sp-qty">×{{ p.cantidad() }}</span>
+                <span class="sp-sub">{{ formatCOP(p.unitPrice * p.cantidad()) }}</span>
+              </div>
+            }
+          }
+          <div class="sp-divider"></div>
+          <div class="sp-row sp-total">
+            <span>Total</span>
+            <span>{{ formatCOP(total()) }}</span>
+          </div>
+        </div>
+      }
+
+      <button class="summarybtn" (click)="summaryOpen.set(!summaryOpen())">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path
+            d="M9 5a2.5 2.5 0 0 0-2.5 2.5A2.5 2.5 0 0 0 5 12a2.5 2.5 0 0 0 4 2V5Z"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linejoin="round"
+          />
+          <path
+            d="M15 5a2.5 2.5 0 0 1 2.5 2.5A2.5 2.5 0 0 1 19 12a2.5 2.5 0 0 1-4 2"
+            stroke="currentColor"
+            stroke-width="1.8"
+          />
+        </svg>
+        <span class="sb-info">
+          <span class="sb-count">{{ totalItems() }} productos</span>
+          <span class="sb-total">{{ formatCOP(total()) }}</span>
+        </span>
+        <svg class="sb-chevron" [class.open]="summaryOpen()" viewBox="0 0 24 24" fill="none">
+          <path
+            d="M6 9l6 6 6-6"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </button>
+
       <div class="bottombar">
         <div class="l">
-          <div class="n">6 Productos</div>
-          <div class="t">Total: $1.349.811</div>
+          <div class="n">{{ totalItems() }} Productos</div>
+          <div class="t">Total: {{ formatCOP(total()) }}</div>
         </div>
         <div class="r">
           <svg viewBox="0 0 24 24" fill="none">
@@ -206,9 +267,9 @@ import { Router } from '@angular/router';
     .budget .bar i {
       position: absolute;
       inset: 0;
-      width: 86%;
       background: linear-gradient(90deg, var(--accent), var(--accent-deep));
       border-radius: 6px;
+      transition: width 0.3s ease;
     }
     .budget .exe {
       position: absolute;
@@ -305,8 +366,17 @@ import { Router } from '@angular/router';
       color: var(--accent);
       font-size: 16px;
       font-weight: 800;
-      cursor: default;
+      cursor: pointer;
       line-height: 1;
+      transition:
+        background 0.15s,
+        transform 0.1s;
+    }
+    .stepper button:hover {
+      background: var(--accent-soft);
+    }
+    .stepper button:active {
+      transform: scale(0.9);
     }
     .stepper span {
       font-weight: 800;
@@ -325,6 +395,137 @@ import { Router } from '@angular/router';
       cursor: default;
       display: grid;
       place-items: center;
+    }
+
+    .summarybtn {
+      position: fixed;
+      bottom: 56px;
+      left: 14px;
+      right: 14px;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      height: 46px;
+      padding: 0 14px;
+      border: 1.5px solid var(--accent);
+      border-radius: 14px;
+      background: var(--white);
+      box-shadow: 0 4px 16px rgba(var(--accent-rgb), 0.15);
+      cursor: pointer;
+      transition:
+        transform 0.15s,
+        box-shadow 0.15s;
+    }
+    .summarybtn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(var(--accent-rgb), 0.22);
+    }
+    .summarybtn:active {
+      transform: scale(0.98);
+    }
+    .summarybtn svg:first-child {
+      width: 20px;
+      height: 20px;
+      color: var(--accent);
+      flex: none;
+    }
+    .sb-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+      line-height: 1.15;
+    }
+    .sb-count {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .sb-total {
+      font-family: var(--display);
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--accent);
+    }
+    .sb-chevron {
+      width: 18px;
+      height: 18px;
+      color: var(--muted);
+      flex: none;
+      transition: transform 0.2s;
+    }
+    .sb-chevron.open {
+      transform: rotate(180deg);
+    }
+
+    .summarypanel {
+      position: fixed;
+      bottom: 108px;
+      left: 14px;
+      right: 14px;
+      z-index: 20;
+      background: var(--white);
+      border: 1.5px solid var(--accent);
+      border-radius: 14px;
+      padding: 14px 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+      animation: slideUp 0.2s ease;
+    }
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .sp-title {
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--ink);
+      margin-bottom: 10px;
+    }
+    .sp-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      padding: 4px 0;
+    }
+    .sp-name {
+      flex: 1;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .sp-qty {
+      font-weight: 700;
+      color: var(--accent);
+      flex: none;
+    }
+    .sp-sub {
+      font-weight: 700;
+      color: var(--ink);
+      flex: none;
+      text-align: right;
+    }
+    .sp-divider {
+      height: 1px;
+      background: var(--line);
+      margin: 6px 0;
+    }
+    .sp-total {
+      font-weight: 800;
+      font-size: 13px;
+      color: var(--ink);
+    }
+    .sp-total span:last-child {
+      color: var(--accent);
     }
 
     .addmore {
@@ -392,12 +593,16 @@ import { Router } from '@angular/router';
 export class Descuentos {
   private readonly router = inject(Router);
 
+  protected readonly Math = Math;
+  protected readonly formatCOP = formatCOP;
+  protected readonly summaryOpen = signal(false);
+
   protected readonly productos = [
     {
-      nombre: 'BARRA FORJADA AGRICOLA / INDUSTRIAL 3205-12 LB',
       codigo: 'T1207320512',
-      cantidad: 3,
-      total: '$260.250',
+      nombre: 'BARRA FORJADA AGRICOLA / INDUSTRIAL 3205-12 LB',
+      unitPrice: 86750,
+      cantidad: signal(3),
       rows: [
         { label: 'Codigo', value: 'T1207320512' },
         { label: 'Precio', value: '$97.199' },
@@ -408,10 +613,10 @@ export class Descuentos {
       ],
     },
     {
-      nombre: 'CARRETA 110 LTS CHASIS MAD VERDE LLANTA ANTIPINCHAZO',
       codigo: 'T1217170020',
-      cantidad: 1,
-      total: null,
+      nombre: 'CARRETA 110 LTS CHASIS MAD VERDE LLANTA ANTIPINCHAZO',
+      unitPrice: 363187,
+      cantidad: signal(1),
       rows: [
         { label: 'Codigo', value: 'T1217170020' },
         { label: 'Precio', value: '$305.199' },
@@ -421,6 +626,20 @@ export class Descuentos {
       ],
     },
   ];
+
+  protected readonly total = computed(() =>
+    this.productos.reduce((sum, p) => sum + p.unitPrice * p.cantidad(), 0),
+  );
+
+  protected readonly totalItems = computed(() =>
+    this.productos.reduce((sum, p) => sum + p.cantidad(), 0),
+  );
+
+  private readonly budgetTotal = 3_142_676;
+  protected readonly budgetExecuted = computed(() => this.total());
+  protected readonly budgetPct = computed(() =>
+    Math.min(100, Math.round((this.budgetExecuted() / this.budgetTotal) * 100)),
+  );
 
   protected goBack() {
     this.router.navigate(['/herragro']);

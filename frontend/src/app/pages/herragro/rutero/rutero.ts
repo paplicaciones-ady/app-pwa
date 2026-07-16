@@ -8,7 +8,15 @@ import { Router } from '@angular/router';
     <div class="s2">
       <div class="appbar">
         <div class="abk" (click)="goBack()">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg viewBox="0 0 24 24" fill="none">
+            <path
+              d="M15 6l-6 6 6 6"
+              stroke="currentColor"
+              stroke-width="2.2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
         </div>
         <div class="abtitle">
           <h2>Rutero</h2>
@@ -44,29 +52,78 @@ import { Router } from '@angular/router';
         </div>
       </div>
 
+      <button class="fab" (click)="goToRutas()">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path
+            d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linejoin="round"
+          />
+          <circle cx="12" cy="10" r="2.2" stroke="currentColor" stroke-width="2" />
+        </svg>
+        Ver rutas y clientes
+      </button>
+
       <div class="subnav">
         <div class="t on">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1v-8Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+          <svg viewBox="0 0 24 24" fill="none">
+            <path
+              d="M4 11l8-6 8 6v8a1 1 0 0 1-1 1h-4v-5h-6v5H5a1 1 0 0 1-1-1v-8Z"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linejoin="round"
+            />
+          </svg>
           Home
         </div>
         <div class="t">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.2" stroke="currentColor" stroke-width="2"/></svg>
+          <svg viewBox="0 0 24 24" fill="none">
+            <path
+              d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linejoin="round"
+            />
+            <circle cx="12" cy="10" r="2.2" stroke="currentColor" stroke-width="2" />
+          </svg>
           Rutero
         </div>
         <div class="t">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M5 19V9M10 19V5M15 19v-7M20 19v-11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <svg viewBox="0 0 24 24" fill="none">
+            <path
+              d="M5 19V9M10 19V5M15 19v-7M20 19v-11"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+          </svg>
           Estadísticas
         </div>
         <div class="t">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z" stroke="currentColor" stroke-width="2"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.3 1a7 7 0 0 0-1.7-1l-.3-2.6h-4l-.3 2.6a7 7 0 0 0-1.7 1l-2.3-1-2 3.4 2 1.5a7 7 0 0 0 0 2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 1.7 1l.3 2.6h4l.3-2.6a7 7 0 0 0 1.7-1l2.3 1 2-3.4-2-1.5c.1-.3.1-.7.1-1Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z" stroke="currentColor" stroke-width="2" />
+            <path
+              d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.3 1a7 7 0 0 0-1.7-1l-.3-2.6h-4l-.3 2.6a7 7 0 0 0-1.7 1l-2.3-1-2 3.4 2 1.5a7 7 0 0 0 0 2l-2 1.5 2 3.4 2.3-1a7 7 0 0 0 1.7 1l.3 2.6h4l.3-2.6a7 7 0 0 0 1.7-1l2.3 1 2-3.4-2-1.5c.1-.3.1-.7.1-1Z"
+              stroke="currentColor"
+              stroke-width="1.4"
+              stroke-linejoin="round"
+            />
+          </svg>
           Herramientas
         </div>
       </div>
     </div>
   `,
   styles: `
-    :host { display: block; }
-    .s2 { display: flex; flex-direction: column; min-height: 100vh; }
+    :host {
+      display: block;
+    }
+    .s2 {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
 
     .appbar {
       flex: none;
@@ -78,16 +135,28 @@ import { Router } from '@angular/router';
       border-bottom: 1px solid var(--line);
     }
     .abk {
-      width: 34px; height: 34px;
+      width: 34px;
+      height: 34px;
       border-radius: 11px;
       border: 1.4px solid var(--line);
       background: var(--white);
-      display: grid; place-items: center;
-      cursor: pointer; flex: none;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      flex: none;
     }
-    .abk:hover { background: var(--bg); }
-    .abk svg { width: 17px; height: 17px; color: var(--ink); }
-    .abtitle { flex: 1; min-width: 0; }
+    .abk:hover {
+      background: var(--bg);
+    }
+    .abk svg {
+      width: 17px;
+      height: 17px;
+      color: var(--ink);
+    }
+    .abtitle {
+      flex: 1;
+      min-width: 0;
+    }
     .abtitle h2 {
       font-family: var(--display);
       font-weight: 700;
@@ -106,7 +175,9 @@ import { Router } from '@angular/router';
       position: relative;
       background: var(--bg);
     }
-    .body::-webkit-scrollbar { width: 0; }
+    .body::-webkit-scrollbar {
+      width: 0;
+    }
 
     .kpis {
       display: grid;
@@ -155,7 +226,7 @@ import { Router } from '@angular/router';
     .toggle span.on {
       background: var(--white);
       color: var(--accent);
-      box-shadow: 0 3px 8px -4px rgba(0,0,0,.2);
+      box-shadow: 0 3px 8px -4px rgba(0, 0, 0, 0.2);
     }
 
     .chart {
@@ -203,6 +274,42 @@ import { Router } from '@angular/router';
       color: var(--muted);
     }
 
+    .fab {
+      position: fixed;
+      bottom: 66px;
+      right: 16px;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      height: 44px;
+      padding: 0 18px;
+      border: 0;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+      color: var(--white);
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: 12.5px;
+      box-shadow: 0 4px 14px rgba(var(--accent-rgb), 0.35);
+      cursor: pointer;
+      transition:
+        transform 0.15s,
+        box-shadow 0.15s;
+    }
+    .fab:hover {
+      transform: scale(1.04);
+      box-shadow: 0 6px 18px rgba(var(--accent-rgb), 0.45);
+    }
+    .fab:active {
+      transform: scale(0.97);
+    }
+    .fab svg {
+      width: 18px;
+      height: 18px;
+      flex: none;
+    }
+
     .subnav {
       flex: none;
       background: var(--white);
@@ -220,8 +327,13 @@ import { Router } from '@angular/router';
       font-weight: 700;
       color: var(--faint);
     }
-    .subnav .t.on { color: var(--accent); }
-    .subnav .t svg { width: 20px; height: 20px; }
+    .subnav .t.on {
+      color: var(--accent);
+    }
+    .subnav .t svg {
+      width: 20px;
+      height: 20px;
+    }
   `,
 })
 export class Rutero {
@@ -246,5 +358,9 @@ export class Rutero {
 
   protected goBack() {
     this.router.navigate(['/herragro']);
+  }
+
+  protected goToRutas() {
+    this.router.navigate(['/herragro/rutas-clientes']);
   }
 }

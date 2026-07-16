@@ -14,6 +14,7 @@ import { Precios } from './pages/herragro/precios/precios';
 import { Nuevos } from './pages/herragro/nuevos/nuevos';
 import { Gastos } from './pages/herragro/gastos/gastos';
 import { Rutero } from './pages/herragro/rutero/rutero';
+import { RutasClientes } from './pages/herragro/rutas-clientes/rutas-clientes';
 import { Brain } from './pages/herragro/brain/brain';
 import { Services } from './pages/services/services';
 import { Pqrs } from './pages/pqrs/pqrs';
@@ -34,6 +35,7 @@ export const routes: Routes = [
   { path: 'herragro/nuevos', component: Nuevos, canActivate: [authGuard] },
   { path: 'herragro/gastos', component: Gastos, canActivate: [authGuard] },
   { path: 'herragro/rutero', component: Rutero, canActivate: [authGuard] },
+  { path: 'herragro/rutas-clientes', component: RutasClientes, canActivate: [authGuard] },
   { path: 'herragro/brain', component: Brain, canActivate: [authGuard] },
   { path: 'herragro/chat', component: ChatCanvas, canActivate: [authGuard] },
   { path: 'services', component: Services, canActivate: [authGuard] },

@@ -50,6 +50,10 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Server,
   },
   {
+    path: 'herragro/rutas-clientes',
+    renderMode: RenderMode.Server,
+  },
+  {
     path: 'herragro/brain',
     renderMode: RenderMode.Server,
   },

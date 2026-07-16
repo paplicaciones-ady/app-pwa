@@ -1,19 +1,20 @@
 @import 'adaptivecards/dist/adaptivecards.css';
+@import 'leaflet/dist/leaflet.css';
 
 :root {
   --blue: #104584;
   --blue-700: #0d3a70;
   --blue-900: #0a2950;
-  --green: #3E9B61;
-  --green-light: #45A662;
+  --green: #3e9b61;
+  --green-light: #45a662;
   --green-soft: #e9f4ed;
   --green-deep: #2f7d4d;
-  --accent: #E11225;
-  --accent-deep: #B30E1C;
+  --accent: #e11225;
+  --accent-deep: #b30e1c;
   --accent-soft: #fdebed;
   --accent-rgb: 225, 18, 37;
-  --yellow: #F2BA2A;
-  --orange: #F07F44;
+  --yellow: #f2ba2a;
+  --orange: #f07f44;
   --grey: #616160;
   --ink: #15263b;
   --muted: #768699;
@@ -32,7 +33,8 @@
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   font-family: var(--body);
   background: var(--bg);
   color: var(--ink);
@@ -51,7 +53,9 @@ button {
   cursor: pointer;
 }
 
-input, select, textarea {
+input,
+select,
+textarea {
   font-family: inherit;
 }
 
@@ -134,7 +138,9 @@ input, select, textarea {
   gap: 9px;
   position: relative;
   overflow: hidden;
-  transition: transform 0.12s, box-shadow 0.2s;
+  transition:
+    transform 0.12s,
+    box-shadow 0.2s;
 }
 
 .btn-primary {
@@ -213,4 +219,12 @@ input, select, textarea {
   font-weight: 700;
   color: var(--accent-deep);
   cursor: pointer;
+}
+
+/* Leaflet current-location marker */
+.current-loc-marker {
+  background: var(--accent);
+  border: 3px solid var(--white);
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
