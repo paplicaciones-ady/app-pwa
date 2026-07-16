@@ -8,7 +8,15 @@ import { Router } from '@angular/router';
     <div class="s2">
       <div class="appbar">
         <div class="abk" (click)="goBack()">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg viewBox="0 0 24 24" fill="none">
+            <path
+              d="M15 6l-6 6 6 6"
+              stroke="currentColor"
+              stroke-width="2.2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
         </div>
         <div class="abtitle">
           <h2>Quejas y reclamos</h2>
@@ -18,12 +26,17 @@ import { Router } from '@angular/router';
       <div class="body">
         <div class="claimhead">
           <div class="th">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M4 20L14 10l-2-2L2 18l2 2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M14 10l3-3 3 3-3 3" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+            <img
+              src="products/T1201303700.png"
+              alt="AZADÓN FORJADO 3037 RECTO"
+              (error)="$any($event.target).style.display = 'none'"
+              loading="lazy"
+            />
           </div>
           <div class="info">
             <div class="cod">T1201303700</div>
             <div class="nm">AZADÓN FORJADO 3037 RECTO</div>
-            <div class="pr">\$30.000</div>
+            <div class="pr">$30.000</div>
           </div>
           <div class="stepper"><button>&minus;</button><span>1</span><button>+</button></div>
         </div>
@@ -40,8 +53,14 @@ import { Router } from '@angular/router';
     </div>
   `,
   styles: `
-    :host { display: block; }
-    .s2 { display: flex; flex-direction: column; min-height: 100vh; }
+    :host {
+      display: block;
+    }
+    .s2 {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
 
     .appbar {
       flex: none;
@@ -53,16 +72,28 @@ import { Router } from '@angular/router';
       border-bottom: 1px solid var(--line);
     }
     .abk {
-      width: 34px; height: 34px;
+      width: 34px;
+      height: 34px;
       border-radius: 11px;
       border: 1.4px solid var(--line);
       background: var(--white);
-      display: grid; place-items: center;
-      cursor: pointer; flex: none;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      flex: none;
     }
-    .abk:hover { background: var(--bg); }
-    .abk svg { width: 17px; height: 17px; color: var(--ink); }
-    .abtitle { flex: 1; min-width: 0; }
+    .abk:hover {
+      background: var(--bg);
+    }
+    .abk svg {
+      width: 17px;
+      height: 17px;
+      color: var(--ink);
+    }
+    .abtitle {
+      flex: 1;
+      min-width: 0;
+    }
     .abtitle h2 {
       font-family: var(--display);
       font-weight: 700;
@@ -81,7 +112,9 @@ import { Router } from '@angular/router';
       position: relative;
       background: var(--bg);
     }
-    .body::-webkit-scrollbar { width: 0; }
+    .body::-webkit-scrollbar {
+      width: 0;
+    }
 
     .claimhead {
       display: flex;
@@ -94,15 +127,24 @@ import { Router } from '@angular/router';
       margin-bottom: 14px;
     }
     .claimhead .th {
-      width: 56px; height: 56px;
+      width: 56px;
+      height: 56px;
       border-radius: 10px;
       background: var(--bg);
-      display: grid; place-items: center;
+      display: grid;
+      place-items: center;
       flex: none;
-      color: var(--faint);
+      overflow: hidden;
     }
-    .claimhead .th svg { width: 30px; height: 30px; }
-    .claimhead .info { flex: 1; min-width: 0; }
+    .claimhead .th img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .claimhead .info {
+      flex: 1;
+      min-width: 0;
+    }
     .claimhead .info .cod {
       font-size: 11px;
       color: var(--muted);
@@ -129,7 +171,8 @@ import { Router } from '@angular/router';
       flex: none;
     }
     .claimhead .stepper button {
-      width: 24px; height: 24px;
+      width: 24px;
+      height: 24px;
       border-radius: 50%;
       border: 0;
       background: var(--bg);
@@ -160,7 +203,7 @@ import { Router } from '@angular/router';
       padding: 12px 14px;
       margin-bottom: 9px;
       cursor: default;
-      transition: .15s;
+      transition: 0.15s;
     }
     .claim:hover {
       border-color: var(--accent);

@@ -8,7 +8,15 @@ import { Router } from '@angular/router';
     <div class="s2">
       <div class="appbar">
         <div class="abk" (click)="goBack()">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg viewBox="0 0 24 24" fill="none">
+            <path
+              d="M15 6l-6 6 6 6"
+              stroke="currentColor"
+              stroke-width="2.2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
         </div>
         <div class="abtitle">
           <h2>Descuentos comerciales</h2>
@@ -17,24 +25,28 @@ import { Router } from '@angular/router';
 
       <div class="body">
         <div class="budget">
-          <div class="bar"><i></i><span class="exe">\$2.689.523 · 86%</span></div>
+          <div class="bar"><i></i><span class="exe">$2.689.523 · 86%</span></div>
           <span class="vsg">3.142.676,3 V.sg</span>
         </div>
 
-        @for (p of productos; track p.nombre; let i = $index) {
+        @for (p of productos; track p.nombre) {
           <div class="pcard">
             <div class="ph">{{ p.nombre }}</div>
             <div class="pb">
               <div class="pthumb">
-                @if (i === 0) {
-                  <svg viewBox="0 0 24 24" fill="none"><path d="M4 20L14 10M14 10l3-3 3 3-3 3-3-3Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-                } @else {
-                  <svg viewBox="0 0 24 24" fill="none"><path d="M3 6h4l3 9h7l2-6H8" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="10" cy="19" r="1.6" stroke="currentColor" stroke-width="1.8"/><circle cx="17" cy="19" r="1.6" stroke="currentColor" stroke-width="1.8"/></svg>
-                }
+                <img
+                  [src]="'products/' + p.codigo + '.png'"
+                  [alt]="p.nombre"
+                  (error)="$any($event.target).style.display = 'none'"
+                  loading="lazy"
+                />
               </div>
               <div class="pdet">
                 @for (r of p.rows; track r.label) {
-                  <div class="rowd"><span>{{ r.label }}</span><b>{{ r.value }}</b></div>
+                  <div class="rowd">
+                    <span>{{ r.label }}</span
+                    ><b>{{ r.value }}</b>
+                  </div>
                 }
                 @if (p.total) {
                   <div class="tot">{{ p.total }}</div>
@@ -42,7 +54,10 @@ import { Router } from '@angular/router';
               </div>
             </div>
             <div class="pfoot">
-              <div class="stepper"><button>&minus;</button><span>{{ p.cantidad }}</span><button>+</button></div>
+              <div class="stepper">
+                <button>&minus;</button><span>{{ p.cantidad }}</span
+                ><button>+</button>
+              </div>
               <button class="pctbtn">%</button>
             </div>
           </div>
@@ -50,27 +65,72 @@ import { Router } from '@angular/router';
 
         <div class="addmore">¿Algo más por agregar?</div>
         <div class="suggest">
-          <div class="sug"><svg viewBox="0 0 24 24" fill="none"><path d="M4 8l8-4 8 4-8 4-8-4Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M4 8v8l8 4 8-4V8" stroke="currentColor" stroke-width="1.6"/></svg></div>
-          <div class="sug"><svg viewBox="0 0 24 24" fill="none"><path d="M4 8l8-4 8 4-8 4-8-4Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M4 8v8l8 4 8-4V8" stroke="currentColor" stroke-width="1.6"/></svg></div>
-          <div class="sug"><svg viewBox="0 0 24 24" fill="none"><path d="M4 8l8-4 8 4-8 4-8-4Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M4 8v8l8 4 8-4V8" stroke="currentColor" stroke-width="1.6"/></svg></div>
+          <div class="sug">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path
+                d="M4 8l8-4 8 4-8 4-8-4Z"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linejoin="round"
+              />
+              <path d="M4 8v8l8 4 8-4V8" stroke="currentColor" stroke-width="1.6" />
+            </svg>
+          </div>
+          <div class="sug">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path
+                d="M4 8l8-4 8 4-8 4-8-4Z"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linejoin="round"
+              />
+              <path d="M4 8v8l8 4 8-4V8" stroke="currentColor" stroke-width="1.6" />
+            </svg>
+          </div>
+          <div class="sug">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path
+                d="M4 8l8-4 8 4-8 4-8-4Z"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linejoin="round"
+              />
+              <path d="M4 8v8l8 4 8-4V8" stroke="currentColor" stroke-width="1.6" />
+            </svg>
+          </div>
         </div>
       </div>
 
       <div class="bottombar">
         <div class="l">
           <div class="n">6 Productos</div>
-          <div class="t">Total: \$1.349.811</div>
+          <div class="t">Total: $1.349.811</div>
         </div>
         <div class="r">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M6 6h15l-1.5 9h-12z" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><circle cx="9" cy="20" r="1.4" fill="#fff"/><circle cx="18" cy="20" r="1.4" fill="#fff"/></svg>
+          <svg viewBox="0 0 24 24" fill="none">
+            <path
+              d="M6 6h15l-1.5 9h-12z"
+              stroke="#fff"
+              stroke-width="1.8"
+              stroke-linejoin="round"
+            />
+            <circle cx="9" cy="20" r="1.4" fill="#fff" />
+            <circle cx="18" cy="20" r="1.4" fill="#fff" />
+          </svg>
           Finalizar pedidos
         </div>
       </div>
     </div>
   `,
   styles: `
-    :host { display: block; }
-    .s2 { display: flex; flex-direction: column; min-height: 100vh; }
+    :host {
+      display: block;
+    }
+    .s2 {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
 
     .appbar {
       flex: none;
@@ -82,16 +142,28 @@ import { Router } from '@angular/router';
       border-bottom: 1px solid var(--line);
     }
     .abk {
-      width: 34px; height: 34px;
+      width: 34px;
+      height: 34px;
       border-radius: 11px;
       border: 1.4px solid var(--line);
       background: var(--white);
-      display: grid; place-items: center;
-      cursor: pointer; flex: none;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      flex: none;
     }
-    .abk:hover { background: var(--bg); }
-    .abk svg { width: 17px; height: 17px; color: var(--ink); }
-    .abtitle { flex: 1; min-width: 0; }
+    .abk:hover {
+      background: var(--bg);
+    }
+    .abk svg {
+      width: 17px;
+      height: 17px;
+      color: var(--ink);
+    }
+    .abtitle {
+      flex: 1;
+      min-width: 0;
+    }
     .abtitle h2 {
       font-family: var(--display);
       font-weight: 700;
@@ -111,7 +183,9 @@ import { Router } from '@angular/router';
       background: var(--bg);
       padding-bottom: 80px;
     }
-    .body::-webkit-scrollbar { width: 0; }
+    .body::-webkit-scrollbar {
+      width: 0;
+    }
 
     .budget {
       display: flex;
@@ -172,21 +246,35 @@ import { Router } from '@angular/router';
       padding: 12px;
     }
     .pthumb {
-      width: 64px; height: 64px;
+      width: 64px;
+      height: 64px;
       border-radius: 10px;
       background: var(--bg);
-      display: grid; place-items: center;
+      display: grid;
+      place-items: center;
       flex: none;
-      color: var(--faint);
+      overflow: hidden;
     }
-    .pthumb svg { width: 30px; height: 30px; }
-    .pdet { flex: 1; font-size: 11px; color: var(--muted); line-height: 1.5; }
+    .pthumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .pdet {
+      flex: 1;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
     .rowd {
       display: flex;
       justify-content: space-between;
       gap: 8px;
     }
-    .rowd b { color: var(--ink); font-weight: 700; }
+    .rowd b {
+      color: var(--ink);
+      font-weight: 700;
+    }
     .tot {
       color: var(--accent);
       font-weight: 800;
@@ -209,7 +297,8 @@ import { Router } from '@angular/router';
       padding: 5px 10px;
     }
     .stepper button {
-      width: 24px; height: 24px;
+      width: 24px;
+      height: 24px;
       border-radius: 50%;
       border: 0;
       background: var(--bg);
@@ -226,7 +315,8 @@ import { Router } from '@angular/router';
       text-align: center;
     }
     .pctbtn {
-      width: 36px; height: 36px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
       background: linear-gradient(135deg, var(--accent), var(--accent-deep));
       color: #fff;
@@ -250,14 +340,19 @@ import { Router } from '@angular/router';
       padding-bottom: 4px;
     }
     .sug {
-      width: 78px; height: 70px;
+      width: 78px;
+      height: 70px;
       border: 1.6px dashed #d7dfe9;
       border-radius: 12px;
-      display: grid; place-items: center;
+      display: grid;
+      place-items: center;
       flex: none;
       color: #cdd6e1;
     }
-    .sug svg { width: 30px; height: 30px; }
+    .sug svg {
+      width: 30px;
+      height: 30px;
+    }
 
     .bottombar {
       flex: none;
@@ -270,7 +365,7 @@ import { Router } from '@angular/router';
     }
     .bottombar .l .n {
       font-size: 11px;
-      opacity: .9;
+      opacity: 0.9;
     }
     .bottombar .l .t {
       font-family: var(--display);
@@ -283,12 +378,15 @@ import { Router } from '@angular/router';
       gap: 7px;
       font-weight: 800;
       font-size: 12.5px;
-      background: rgba(255,255,255,.16);
+      background: rgba(255, 255, 255, 0.16);
       padding: 8px 12px;
       border-radius: 11px;
       cursor: default;
     }
-    .bottombar .r svg { width: 16px; height: 16px; }
+    .bottombar .r svg {
+      width: 16px;
+      height: 16px;
+    }
   `,
 })
 export class Descuentos {
@@ -297,9 +395,11 @@ export class Descuentos {
   protected readonly productos = [
     {
       nombre: 'BARRA FORJADA AGRICOLA / INDUSTRIAL 3205-12 LB',
+      codigo: 'T1207320512',
       cantidad: 3,
       total: '$260.250',
       rows: [
+        { label: 'Codigo', value: 'T1207320512' },
         { label: 'Precio', value: '$97.199' },
         { label: 'Descuento', value: '15,00 %' },
         { label: 'Valor desc.', value: '$14.580' },
@@ -309,9 +409,11 @@ export class Descuentos {
     },
     {
       nombre: 'CARRETA 110 LTS CHASIS MAD VERDE LLANTA ANTIPINCHAZO',
+      codigo: 'T1217170020',
       cantidad: 1,
       total: null,
       rows: [
+        { label: 'Codigo', value: 'T1217170020' },
         { label: 'Precio', value: '$305.199' },
         { label: 'Descuento', value: '0,00 %' },
         { label: 'IVA', value: '19,0 %' },

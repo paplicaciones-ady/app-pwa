@@ -18,8 +18,12 @@ import { Router } from '@angular/router';
       <div class="body">
         <div class="pmodal">
           <div class="img">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M7 10V7a5 5 0 0 1 10 0v3M5 10h14l-1 10H6L5 10Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
-          </div>
+            <img
+              src="products/T1398601007.png"
+              alt="BOTA HERRAGRO PVC NEGRA AGRICOLA S/P TALLA 42"
+              loading="lazy"
+            />          
+            </div>
           <div class="in">
             <h3>BOTA HERRAGRO PVC NEGRA AGRICOLA S/P TALLA 42</h3>
             <div class="kv"><b>Código:</b> T1398601007</div>

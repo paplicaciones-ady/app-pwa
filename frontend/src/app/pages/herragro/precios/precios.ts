@@ -8,7 +8,15 @@ import { Router } from '@angular/router';
     <div class="s2">
       <div class="appbar">
         <div class="abk" (click)="goBack()">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg viewBox="0 0 24 24" fill="none">
+            <path
+              d="M15 6l-6 6 6 6"
+              stroke="currentColor"
+              stroke-width="2.2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
         </div>
         <div class="abtitle">
           <h2>Consulta de precios</h2>
@@ -18,23 +26,51 @@ import { Router } from '@angular/router';
       <div class="body">
         <div class="searchrow">
           <div class="sb">
-            <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-            <input placeholder="Buscar productos">
+            <svg viewBox="0 0 24 24" fill="none">
+              <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2" />
+              <path
+                d="M20 20l-3.5-3.5"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+            <input placeholder="Buscar productos" />
           </div>
           <div class="scan">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M4 4h4M4 4v4M20 4h-4M20 4v4M4 20h4M4 20v-4M20 20h-4M20 20v-4M7 8v8M10 8v8M13 8v8M17 8v8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <svg viewBox="0 0 24 24" fill="none">
+              <path
+                d="M4 4h4M4 4v4M20 4h-4M20 4v4M4 20h4M4 20v-4M20 20h-4M20 20v-4M7 8v8M10 8v8M13 8v8M17 8v8"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              />
+            </svg>
           </div>
         </div>
 
         <div class="selr">
           PDV
-          <svg viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg viewBox="0 0 24 24" fill="none">
+            <path
+              d="M6 9l6 6 6-6"
+              stroke="#fff"
+              stroke-width="2.2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
         </div>
 
         @for (p of productos; track p.codigo) {
           <div class="prcard">
             <div class="th">
-              <svg viewBox="0 0 24 24" fill="none"><path d="M4 20L16 8l-2-2L2 18l2 2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+              <img
+                [src]="'products/' + p.codigo + '.png'"
+                [alt]="p.nombre"
+                (error)="$any($event.target).style.display = 'none'"
+                loading="lazy"
+              />
             </div>
             <div class="info">
               <div class="cod">{{ p.codigo }}</div>
@@ -49,8 +85,14 @@ import { Router } from '@angular/router';
     </div>
   `,
   styles: `
-    :host { display: block; }
-    .s2 { display: flex; flex-direction: column; min-height: 100vh; }
+    :host {
+      display: block;
+    }
+    .s2 {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
 
     .appbar {
       flex: none;
@@ -62,16 +104,28 @@ import { Router } from '@angular/router';
       border-bottom: 1px solid var(--line);
     }
     .abk {
-      width: 34px; height: 34px;
+      width: 34px;
+      height: 34px;
       border-radius: 11px;
       border: 1.4px solid var(--line);
       background: var(--white);
-      display: grid; place-items: center;
-      cursor: pointer; flex: none;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      flex: none;
     }
-    .abk:hover { background: var(--bg); }
-    .abk svg { width: 17px; height: 17px; color: var(--ink); }
-    .abtitle { flex: 1; min-width: 0; }
+    .abk:hover {
+      background: var(--bg);
+    }
+    .abk svg {
+      width: 17px;
+      height: 17px;
+      color: var(--ink);
+    }
+    .abtitle {
+      flex: 1;
+      min-width: 0;
+    }
     .abtitle h2 {
       font-family: var(--display);
       font-weight: 700;
@@ -90,7 +144,9 @@ import { Router } from '@angular/router';
       position: relative;
       background: var(--bg);
     }
-    .body::-webkit-scrollbar { width: 0; }
+    .body::-webkit-scrollbar {
+      width: 0;
+    }
 
     .searchrow {
       display: flex;
@@ -108,26 +164,40 @@ import { Router } from '@angular/router';
       height: 46px;
       padding: 0 13px;
     }
-    .sb svg { width: 17px; height: 17px; color: var(--faint); flex: none; }
+    .sb svg {
+      width: 17px;
+      height: 17px;
+      color: var(--faint);
+      flex: none;
+    }
     .sb input {
-      border: 0; outline: 0;
+      border: 0;
+      outline: 0;
       flex: 1;
       font-size: 13px;
       font-weight: 600;
       color: var(--ink);
       background: transparent;
     }
-    .sb input::placeholder { color: var(--faint); font-weight: 500; }
+    .sb input::placeholder {
+      color: var(--faint);
+      font-weight: 500;
+    }
     .scan {
-      width: 46px; height: 46px;
+      width: 46px;
+      height: 46px;
       border-radius: 13px;
       border: 1.5px solid var(--line);
       background: var(--white);
-      display: grid; place-items: center;
+      display: grid;
+      place-items: center;
       flex: none;
       color: var(--accent);
     }
-    .scan svg { width: 20px; height: 20px; }
+    .scan svg {
+      width: 20px;
+      height: 20px;
+    }
 
     .selr {
       width: 100%;
@@ -146,7 +216,10 @@ import { Router } from '@angular/router';
       cursor: default;
       margin-bottom: 12px;
     }
-    .selr svg { width: 16px; height: 16px; }
+    .selr svg {
+      width: 16px;
+      height: 16px;
+    }
 
     .prcard {
       display: flex;
@@ -158,14 +231,20 @@ import { Router } from '@angular/router';
       margin-bottom: 10px;
     }
     .prcard .th {
-      width: 52px; height: 52px;
+      width: 52px;
+      height: 52px;
       border-radius: 10px;
       background: var(--bg);
-      display: grid; place-items: center;
+      display: grid;
+      place-items: center;
       flex: none;
-      color: var(--faint);
+      overflow: hidden;
     }
-    .prcard .th svg { width: 26px; height: 26px; }
+    .prcard .th img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
     .prcard .info .cod {
       font-size: 11px;
       font-weight: 800;
@@ -183,7 +262,9 @@ import { Router } from '@angular/router';
       color: var(--muted);
       line-height: 1.5;
     }
-    .prcard .info .kv b { color: var(--ink); }
+    .prcard .info .kv b {
+      color: var(--ink);
+    }
   `,
 })
 export class Precios {
@@ -211,10 +292,7 @@ export class Precios {
     {
       codigo: 'T1201311901',
       nombre: 'AZADÓN FORJADO 3119 PAPE ANGOSTO C/MUESCA',
-      detalles: [
-        '<b>Precio:</b> $25.700 · IVA 5.0',
-        'Unid. empaque: 12.0',
-      ],
+      detalles: ['<b>Precio:</b> $25.700 · IVA 5.0', 'Unid. empaque: 12.0'],
     },
   ];
 

@@ -26,10 +26,10 @@ import { Router } from '@angular/router';
           <span class="cap">0/500</span>
         </div>
         <div class="field">
-          <input class="inp" placeholder="📅  Fecha inicio de viaje" style="color:var(--faint)">
+          <input type="date" class="inp" placeholder="📅  Fecha inicio de viaje" style="color:var(--faint)">
         </div>
         <div class="field">
-          <input class="inp" placeholder="📅  Fecha fin del viaje" style="color:var(--faint)">
+          <input type="date" class="inp" placeholder="📅  Fecha fin del viaje" style="color:var(--faint)">
         </div>
         <div class="field">
           <input class="inp" placeholder="Valor anticipo">
