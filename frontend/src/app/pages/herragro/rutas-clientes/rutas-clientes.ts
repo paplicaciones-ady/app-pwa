@@ -74,6 +74,18 @@ interface Cliente {
 
       <div class="mapwrap" [class.hidden]="activeTab() !== 'mapa'">
         <div class="mapholder" #mapContainer></div>
+        <button class="routebtn" [class.on]="showRoute()" (click)="toggleRoute()">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path
+              d="M3 17l4-4 4 4 4-8 4 4"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          {{ showRoute() ? 'Ocultar ruta' : 'Mostrar ruta' }}
+        </button>
       </div>
     </div>
   `,
@@ -85,6 +97,7 @@ interface Cliente {
       display: flex;
       flex-direction: column;
       min-height: 100vh;
+      padding-bottom: 54px;
     }
 
     .appbar {
@@ -231,9 +244,43 @@ interface Cliente {
     .mapholder {
       position: absolute;
       inset: 0;
+      z-index: 0;
     }
     .hidden {
       display: none !important;
+    }
+    .routebtn {
+      position: absolute;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 10px 18px;
+      border: 0;
+      border-radius: 999px;
+      background: var(--white);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--ink);
+      cursor: pointer;
+      transition:
+        background 0.15s,
+        color 0.15s,
+        box-shadow 0.15s;
+    }
+    .routebtn svg {
+      width: 18px;
+      height: 18px;
+    }
+    .routebtn.on {
+      background: var(--blue);
+      color: var(--white);
+      box-shadow: 0 4px 16px rgba(16, 69, 132, 0.35);
     }
   `,
 })
@@ -242,6 +289,7 @@ export class RutasClientes implements OnDestroy {
   private readonly platformId = inject(PLATFORM_ID);
 
   protected readonly activeTab = signal<'clientes' | 'mapa'>('clientes');
+  protected readonly showRoute = signal(false);
   protected readonly mapContainer = viewChild<ElementRef<HTMLDivElement>>('mapContainer');
 
   private map: unknown = null;
@@ -327,14 +375,78 @@ export class RutasClientes implements OnDestroy {
     });
 
     effect(() => {
+      const tab = this.activeTab();
+      if (!this.mapReady || tab !== 'mapa') return;
+      setTimeout(() => {
+        const map = this.map as import('leaflet').Map;
+        if (map) {
+          map.invalidateSize();
+          this.refreshMarkers();
+        }
+      }, 80);
+    });
+
+    effect(() => {
       if (!this.mapReady) return;
       const _deps = this.clientes.map((c) => c.habilitado());
+      const _route = this.showRoute();
       this.refreshMarkers();
     });
   }
 
   ngOnDestroy(): void {
     (this.map as { remove?: () => void })?.remove?.();
+  }
+
+  private getPoints(): [number, number][] {
+    return [
+      [this.CURRENT_LOCATION.lat, this.CURRENT_LOCATION.lng],
+      ...this.clientes
+        .filter((c) => c.habilitado())
+        .map((c) => {
+          const coords = this.clientCoords[c.nombre];
+          return coords ? ([coords.lat, coords.lng] as [number, number]) : null;
+        })
+        .filter((p): p is [number, number] => p !== null),
+    ];
+  }
+
+  private async drawRoadRoute(): Promise<void> {
+    const L = this.Leaflet;
+    const layer = this.markersLayer as import('leaflet').LayerGroup;
+    const map = this.map as import('leaflet').Map;
+    if (!L || !map || !layer) return;
+
+    const points = this.getPoints();
+    if (points.length < 2) return;
+
+    const coords = points.map((p) => `${p[1]},${p[0]}`).join(';');
+    try {
+      const res = await fetch(
+        `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`,
+      );
+      const data = await res.json();
+      if (data.code !== 'Ok' || !data.routes?.length) return;
+
+      const geometry = data.routes[0].geometry.coordinates;
+      const latLngs = geometry.map((c: number[]) => [c[1], c[0]] as [number, number]);
+
+      L.polyline(latLngs, {
+        color: '#104584',
+        weight: 4,
+        opacity: 0.75,
+        lineCap: 'round',
+        lineJoin: 'round',
+      }).addTo(layer);
+    } catch {
+      // fallback: straight line
+      L.polyline(points, {
+        color: '#104584',
+        weight: 3.5,
+        opacity: 0.5,
+        dashArray: '10, 7',
+      }).addTo(layer);
+    }
   }
 
   private refreshMarkers(): void {
@@ -357,25 +469,30 @@ export class RutasClientes implements OnDestroy {
             iconAnchor: [7, 7],
           }),
         })
+          .bindTooltip(`<b>${c.nombre}</b><br>${c.direccion}`, {
+            direction: 'top',
+            offset: [0, -10],
+            opacity: 1,
+          })
           .bindPopup(`<b>${c.nombre}</b><br>${c.direccion}`)
           .addTo(layer);
       });
 
     map.invalidateSize();
 
-    const points: [number, number][] = [
-      [this.CURRENT_LOCATION.lat, this.CURRENT_LOCATION.lng],
-      ...this.clientes
-        .filter((c) => c.habilitado())
-        .map((c) => {
-          const coords = this.clientCoords[c.nombre];
-          return coords ? ([coords.lat, coords.lng] as [number, number]) : null;
-        })
-        .filter((p): p is [number, number] => p !== null),
-    ];
+    const points = this.getPoints();
     if (points.length > 0) {
       map.fitBounds(L.latLngBounds(points).pad(0.2), { maxZoom: 15, padding: [40, 40] });
     }
+
+    if (this.showRoute() && points.length > 1) {
+      this.drawRoadRoute();
+    }
+  }
+
+  protected toggleRoute(): void {
+    this.showRoute.set(!this.showRoute());
+    this.refreshMarkers();
   }
 
   protected goBack(): void {

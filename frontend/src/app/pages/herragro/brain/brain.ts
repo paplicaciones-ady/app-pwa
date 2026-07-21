@@ -207,24 +207,18 @@ import { Router } from '@angular/router';
               ><span class="n">{{ r.segmentoN }}</span> {{ r.segmentoLabel }}</span
             >
             <div class="prog">
-              <div class="progrow">
-                <span class="plabel">Proyectado</span>
-                <div class="pbar">
-                  <i class="projtotal" [style.width.%]="r.proyectadoTotal"></i>
-                </div>
-                <span class="pval">{{ r.proyectadoTotal }}%</span>
+              <div class="pbar">
+                <i
+                  class="projactual"
+                  [style.width.%]="(r.proyectadoActual / r.proyectadoTotal) * 100"
+                ></i>
+                <i class="real" [style.width.%]="(r.real / r.proyectadoTotal) * 100"></i>
               </div>
-              <div class="progrow">
-                <span class="plabel">Actual</span>
-                <div class="pbar">
-                  <i class="projactual" [style.width.%]="r.proyectadoActual"></i>
-                </div>
-                <span class="pval">{{ r.proyectadoActual }}%</span>
-              </div>
-              <div class="progrow">
-                <span class="plabel">Real</span>
-                <div class="pbar"><i class="real" [style.width.%]="r.real"></i></div>
-                <span class="pval">{{ r.real }}%</span>
+              <div class="proglegend">
+                <span class="pleg"><i class="dot real"></i>Real {{ r.real }}%</span>
+                <span class="pleg"
+                  ><i class="dot projtotal"></i>Proyectado {{ r.proyectadoTotal }}%</span
+                >
               </div>
             </div>
           </div>
@@ -491,52 +485,58 @@ import { Router } from '@angular/router';
     }
 
     .prog {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
       margin-top: 10px;
     }
-    .progrow {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .plabel {
-      width: 68px;
-      font-size: 9.5px;
-      font-weight: 600;
-      color: var(--muted);
-      flex: none;
-      text-align: right;
-    }
     .pbar {
-      flex: 1;
-      height: 6px;
+      height: 8px;
       border-radius: 99px;
       background: #eef2f7;
+      position: relative;
       overflow: hidden;
     }
     .pbar i {
-      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
       height: 100%;
       border-radius: 99px;
       transition: width 0.3s ease;
     }
-    .pbar i.projtotal {
-      background: #c5d0e0;
-    }
     .pbar i.projactual {
-      background: #f5a623;
+      background: #d94452;
+      z-index: 1;
     }
     .pbar i.real {
       background: var(--accent);
+      z-index: 2;
     }
-    .pval {
-      width: 32px;
-      font-size: 10px;
-      font-weight: 700;
-      color: var(--ink);
-      flex: none;
+    .proglegend {
+      display: flex;
+      gap: 10px;
+      margin-top: 6px;
+    }
+    .pleg {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 9.5px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .dot.real {
+      background: var(--accent);
+    }
+    .dot.projactual {
+      background: #f5a623;
+    }
+    .dot.projtotal {
+      background: #c5d0e0;
     }
 
     .bottombar {
