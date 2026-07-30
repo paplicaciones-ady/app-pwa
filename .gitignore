@@ -35,3 +35,8 @@ npm-debug.log*
 
 
 *.tsbuildinfo
+
+# TypeScript compilation outputs (generated in-place beside .ts files)
+*.js
+*.js.map
+*.d.ts
