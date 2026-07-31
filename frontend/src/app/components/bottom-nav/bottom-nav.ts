@@ -522,9 +522,8 @@ export class BottomNav {
       if (pending === 'true') {
         sessionStorage.removeItem('openChat');
         queueMicrotask(() => {
-          this.panelOpen.set(true);
           if (this.authService.isFullyAuthenticated()) {
-            this.checkToken();
+            this.router.navigate(['/chat']);
           }
         });
       }
@@ -538,16 +537,23 @@ export class BottomNav {
     });
   }
 
-  onBubbleClick() {
+  async onBubbleClick() {
     if (!this.authService.isLoggedIn()) {
       this.router.navigate(['/login']);
       return;
     }
 
-    this.panelOpen.set(true);
-
     if (this.authService.isFullyAuthenticated()) {
-      this.checkToken();
+      this.router.navigate(['/chat']);
+      return;
+    }
+
+    const upgraded = await this.authService.tryUpgradeSession();
+    if (upgraded) {
+      this.router.navigate(['/chat']);
+    } else {
+      sessionStorage.setItem('openChat', 'true');
+      await this.microsoftAuthService.login();
     }
   }
 
